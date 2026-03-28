@@ -66,6 +66,7 @@
 	let isFocusMode = $state(false);
 	let pageZoomById = $state<Record<string, number>>({});
 	let viewerToolbarElement = $state<HTMLElement | null>(null);
+	let viewerViewportHeight = $state(720);
 	let focusReturnElement = $state<HTMLElement | null>(null);
 	let activeNoteFileId = $state<string | null>(null);
 
@@ -135,6 +136,37 @@
 
 		feedbackMessage = form.message;
 		isFeedbackError = !('success' in form && form.success);
+	});
+
+	$effect(() => {
+		if (!browser || !viewerToolbarElement) {
+			return;
+		}
+
+		const currentViewerToolbarElement = viewerToolbarElement;
+		const updateViewerViewportHeight = () => {
+			const sectionTop = Math.max(currentViewerToolbarElement.getBoundingClientRect().top, 0);
+			const reservedViewportHeight = isFocusMode ? 96 : 24;
+			viewerViewportHeight = Math.max(
+				Math.floor(window.innerHeight - sectionTop - reservedViewportHeight),
+				320
+			);
+		};
+
+		updateViewerViewportHeight();
+
+		const resizeObserver = new ResizeObserver(() => {
+			updateViewerViewportHeight();
+		});
+		resizeObserver.observe(currentViewerToolbarElement);
+		window.addEventListener('resize', updateViewerViewportHeight);
+		window.addEventListener('scroll', updateViewerViewportHeight, { passive: true });
+
+		return () => {
+			resizeObserver.disconnect();
+			window.removeEventListener('resize', updateViewerViewportHeight);
+			window.removeEventListener('scroll', updateViewerViewportHeight);
+		};
 	});
 
 	$effect(() => {
@@ -820,6 +852,7 @@
 						<SongNotePage
 							fileName={viewerPage.fileName}
 							fileUrl={viewerPage.fileUrl}
+							maxViewportHeight={viewerViewportHeight}
 							mimeLabel={viewerPage.mimeLabel}
 							mimeType={viewerPage.mimeType}
 							pageNumber={viewerPage.page_number}

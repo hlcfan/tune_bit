@@ -48,6 +48,7 @@
 	let {
 		fileName,
 		fileUrl,
+		maxViewportHeight,
 		mimeLabel,
 		mimeType,
 		pageNumber,
@@ -62,6 +63,7 @@
 	}: {
 		fileName: string;
 		fileUrl: string;
+		maxViewportHeight: number;
 		mimeLabel: string;
 		mimeType: string;
 		pageNumber: number;
@@ -76,18 +78,39 @@
 	} = $props();
 
 	let pageElement = $state<HTMLElement | null>(null);
+	let pageHeaderElement = $state<HTMLDivElement | null>(null);
 	let canvasContainer = $state<HTMLDivElement | null>(null);
 	let canvasElement = $state<HTMLCanvasElement | null>(null);
 	let imageLoaded = $state(false);
+	let imageNaturalWidth = $state(0);
+	let imageNaturalHeight = $state(0);
 	let isLoading = $state(false);
 	let isVisible = $state(!browser);
 	let renderWidth = $state(0);
+	let pageHeaderHeight = $state(0);
 	let errorMessage = $state('');
 
 	const isPdf = $derived(mimeType === 'application/pdf');
 	const pageLabel = $derived(`Page ${sortOrder + 1}`);
 	const zoomLabel = $derived(`${Math.round(zoom * 100)}%`);
 	const pageHeadingId = $derived(`song-note-page-${sortOrder + 1}`);
+	const contentViewportHeight = $derived(
+		Math.max(Math.floor(maxViewportHeight - pageHeaderHeight - 48), 220)
+	);
+	const imageDisplayDimensions = $derived.by(() => {
+		if (imageNaturalWidth === 0 || imageNaturalHeight === 0) {
+			return null;
+		}
+
+		const fitWidthScale = Math.max(renderWidth - 24, 240) / imageNaturalWidth;
+		const fitHeightScale = Math.max(contentViewportHeight - 24, 160) / imageNaturalHeight;
+		const displayScale = Math.max(Math.min(fitWidthScale, fitHeightScale), 0.1) * zoom;
+
+		return {
+			width: Math.max(Math.floor(imageNaturalWidth * displayScale), 1),
+			height: Math.max(Math.floor(imageNaturalHeight * displayScale), 1)
+		};
+	});
 
 	$effect(() => {
 		if (!browser || !pageElement) {
@@ -137,7 +160,33 @@
 		}
 
 		imageLoaded = false;
+		imageNaturalWidth = 0;
+		imageNaturalHeight = 0;
 		errorMessage = '';
+	});
+
+	$effect(() => {
+		if (!browser || !pageHeaderElement) {
+			return;
+		}
+
+		const currentPageHeaderElement = pageHeaderElement;
+		pageHeaderHeight = Math.max(
+			Math.floor(currentPageHeaderElement.getBoundingClientRect().height),
+			0
+		);
+		const resizeObserver = new ResizeObserver((entries) => {
+			const [entry] = entries;
+			pageHeaderHeight = Math.max(
+				Math.floor(
+					entry?.contentRect.height ?? currentPageHeaderElement.getBoundingClientRect().height
+				),
+				0
+			);
+		});
+		resizeObserver.observe(currentPageHeaderElement);
+
+		return () => resizeObserver.disconnect();
 	});
 
 	$effect(() => {
@@ -174,8 +223,9 @@
 				}
 
 				const baseViewport = pdfPage.getViewport({ scale: 1 });
-				const fitScale = Math.max(renderWidth - 24, 240) / baseViewport.width;
-				const displayScale = fitScale * zoom;
+				const fitWidthScale = Math.max(renderWidth - 24, 240) / baseViewport.width;
+				const fitHeightScale = Math.max(contentViewportHeight - 24, 160) / baseViewport.height;
+				const displayScale = Math.max(Math.min(fitWidthScale, fitHeightScale), 0.1) * zoom;
 				const deviceScale = displayScale * (window.devicePixelRatio || 1);
 				const displayViewport = pdfPage.getViewport({ scale: displayScale });
 				const renderViewport = pdfPage.getViewport({ scale: deviceScale });
@@ -230,7 +280,18 @@
 		};
 	});
 
-	function handleImageLoad() {
+	function handleImageLoad(event: Event) {
+		if (canvasContainer) {
+			renderWidth = Math.max(Math.floor(canvasContainer.clientWidth), 0);
+		}
+
+		const currentTarget = event.currentTarget;
+
+		if (currentTarget instanceof HTMLImageElement) {
+			imageNaturalWidth = currentTarget.naturalWidth;
+			imageNaturalHeight = currentTarget.naturalHeight;
+		}
+
 		imageLoaded = true;
 		errorMessage = '';
 	}
@@ -249,7 +310,7 @@
 	style="content-visibility: auto; contain-intrinsic-size: 900px;"
 >
 	<div class="space-y-4">
-		<div class="flex flex-wrap items-start justify-between gap-3">
+		<div bind:this={pageHeaderElement} class="flex flex-wrap items-start justify-between gap-3">
 			<div class="min-w-0">
 				<div class="flex flex-wrap items-center gap-2">
 					<Badge variant="outline">{pageLabel}</Badge>
@@ -307,31 +368,32 @@
 		<div
 			bind:this={canvasContainer}
 			aria-busy={isPdf ? isLoading : !imageLoaded && !errorMessage}
-			class="overflow-auto rounded-2xl bg-muted/20 p-3"
+			class="flex items-start justify-center overflow-auto rounded-2xl bg-muted/20 p-3"
+			style={`height: ${contentViewportHeight}px;`}
 		>
 			{#if isPdf}
 				{#if !isVisible}
-					<div class="aspect-[8.5/11] animate-pulse rounded-xl bg-muted"></div>
+					<div class="aspect-[8.5/11] h-full animate-pulse rounded-xl bg-muted"></div>
 				{:else if errorMessage}
 					<div
-						class="flex aspect-[8.5/11] items-center justify-center rounded-xl border border-dashed px-4 text-center text-sm text-muted-foreground"
+						class="flex aspect-[8.5/11] h-full items-center justify-center rounded-xl border border-dashed px-4 text-center text-sm text-muted-foreground"
 					>
 						{errorMessage}
 					</div>
 				{:else}
 					{#if isLoading}
-						<div class="aspect-[8.5/11] animate-pulse rounded-xl bg-muted"></div>
+						<div class="aspect-[8.5/11] h-full animate-pulse rounded-xl bg-muted"></div>
 					{/if}
 					<canvas
 						bind:this={canvasElement}
-						class={`mx-auto rounded-xl bg-white shadow-sm ${isLoading ? 'hidden' : 'block'}`}
+						class={`rounded-xl bg-white shadow-sm ${isLoading ? 'hidden' : 'block'}`}
 					></canvas>
 				{/if}
 			{:else if !isVisible}
-				<div class="aspect-[8.5/11] animate-pulse rounded-xl bg-muted"></div>
+				<div class="aspect-[8.5/11] h-full animate-pulse rounded-xl bg-muted"></div>
 			{:else if errorMessage}
 				<div
-					class="flex aspect-[8.5/11] items-center justify-center rounded-xl border border-dashed px-4 text-center text-sm text-muted-foreground"
+					class="flex aspect-[8.5/11] h-full items-center justify-center rounded-xl border border-dashed px-4 text-center text-sm text-muted-foreground"
 				>
 					{errorMessage}
 				</div>
@@ -344,8 +406,10 @@
 						src={fileUrl}
 						alt={`${fileName} page ${sortOrder + 1}`}
 						loading="lazy"
-						class={`mx-auto h-auto max-w-none rounded-xl bg-white shadow-sm transition-opacity ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
-						style={`width: ${zoom * 100}%`}
+						class={`rounded-xl bg-white shadow-sm transition-opacity ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
+						style={imageDisplayDimensions
+							? `width: ${imageDisplayDimensions.width}px; height: ${imageDisplayDimensions.height}px;`
+							: ''}
 						onload={handleImageLoad}
 						onerror={handleImageError}
 					/>
