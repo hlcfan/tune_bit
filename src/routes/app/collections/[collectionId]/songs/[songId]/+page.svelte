@@ -6,13 +6,7 @@
 	import SongNotePage from '$lib/components/note-viewer/song-note-page.svelte';
 	import { Badge } from '$lib/components/ui/badge/index.js';
 	import { Button, buttonVariants } from '$lib/components/ui/button/index.js';
-	import {
-		Card,
-		CardContent,
-		CardDescription,
-		CardHeader,
-		CardTitle
-	} from '$lib/components/ui/card/index.js';
+	import { Card, CardContent } from '$lib/components/ui/card/index.js';
 	import { onMount, tick } from 'svelte';
 
 	type PreparedUpload = {
@@ -69,7 +63,7 @@
 	let layout = $state<ViewerLayout>(1);
 	let isFocusMode = $state(false);
 	let pageZoomById = $state<Record<string, number>>({});
-	let viewerToolbarElement = $state<HTMLDivElement | null>(null);
+	let viewerToolbarElement = $state<HTMLElement | null>(null);
 	let focusReturnElement = $state<HTMLElement | null>(null);
 	let activeNoteFileId = $state<string | null>(null);
 
@@ -222,18 +216,6 @@
 			window.removeEventListener('keydown', handleKeydown);
 		};
 	});
-
-	function getDateLabel(timestamp: string) {
-		return new Date(timestamp).toLocaleDateString(undefined, {
-			month: 'short',
-			day: 'numeric',
-			year: 'numeric'
-		});
-	}
-
-	function getFileName(noteFileId: string) {
-		return noteFilesById.get(noteFileId)?.original_filename ?? 'Uploaded file';
-	}
 
 	function getMimeLabel(mimeType: string) {
 		if (mimeType === 'application/pdf') {
@@ -702,6 +684,7 @@
 						aria-pressed={layout === 1}
 						variant={layout === 1 ? 'default' : 'outline'}
 						size="sm"
+						title="Press 1 key for 1-column layout"
 						onclick={() => setLayout(1)}
 					>
 						1 column
@@ -710,6 +693,7 @@
 						aria-pressed={layout === 2}
 						variant={layout === 2 ? 'default' : 'outline'}
 						size="sm"
+						title="Press 2 key for 2-column layout"
 						onclick={() => setLayout(2)}
 					>
 						2 columns
@@ -718,6 +702,7 @@
 						aria-pressed={layout === 3}
 						variant={layout === 3 ? 'default' : 'outline'}
 						size="sm"
+						title="Press 3 key for 3-column layout"
 						onclick={() => setLayout(3)}
 					>
 						3 columns
@@ -728,6 +713,9 @@
 					data-focus-mode-toggle="true"
 					variant={isFocusMode ? 'default' : 'outline'}
 					size="sm"
+					title={isFocusMode
+						? 'Press Escape key to exit focus mode'
+						: 'Press F key to enter focus mode'}
 					onclick={toggleFocusMode}
 				>
 					{isFocusMode ? 'Exit focus mode' : 'Enter focus mode'}
@@ -735,182 +723,58 @@
 			</div>
 		</section>
 
-		<div class={isFocusMode ? '' : 'grid gap-6 xl:grid-cols-[320px_minmax(0,1fr)]'}>
-			{#if !isFocusMode}
-				<aside class="space-y-4 xl:sticky xl:top-3 xl:self-start">
-					{#if feedbackMessage}
-						<p aria-live="polite" class={`rounded-2xl border px-4 py-3 text-sm ${feedbackClass}`}>
-							{feedbackMessage}
-						</p>
-					{/if}
-
-					<Card class="border-border/70">
-						<CardHeader class="space-y-2">
-							<CardTitle>Song details</CardTitle>
-							<CardDescription>
-								Keep the song context nearby while the viewer takes most of the space.
-							</CardDescription>
-						</CardHeader>
-						<CardContent class="grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
-							<div class="rounded-2xl border border-dashed px-4 py-4">
-								<p class="text-sm text-muted-foreground">Collection</p>
-								<p class="mt-2 font-medium">{data.collection.name}</p>
-							</div>
-							<div class="rounded-2xl border border-dashed px-4 py-4">
-								<p class="text-sm text-muted-foreground">Files</p>
-								<p class="mt-2 font-medium">{noteFiles.length}</p>
-							</div>
-							<div class="rounded-2xl border border-dashed px-4 py-4">
-								<p class="text-sm text-muted-foreground">Pages</p>
-								<p class="mt-2 font-medium">{totalPages}</p>
-							</div>
-						</CardContent>
-					</Card>
-
-					<Card class="border-border/70">
-						<CardHeader class="space-y-2">
-							<CardTitle>Notes</CardTitle>
-							<CardDescription>
-								Each uploaded file stays attached to this song and feeds the integrated viewer.
-							</CardDescription>
-						</CardHeader>
-						<CardContent class="space-y-3">
-							{#if noteFiles.length === 0}
-								<div class="rounded-2xl border border-dashed px-4 py-8 text-center">
-									<p class="font-medium">No notes uploaded yet</p>
-									<p class="mt-2 text-sm text-muted-foreground">
-										Open Upload Notes to attach PDFs or images to this song.
-									</p>
-								</div>
-							{:else}
-								<div class="space-y-3">
-									{#each noteFiles as noteFile (noteFile.id)}
-										<div class="rounded-2xl border px-4 py-3">
-											<div class="flex items-start justify-between gap-3">
-												<div class="min-w-0 space-y-1">
-													<p class="truncate font-medium">{noteFile.original_filename}</p>
-													<p class="text-sm text-muted-foreground">
-														Uploaded {getDateLabel(noteFile.created_at)}
-													</p>
-												</div>
-												<Badge variant="outline">{getMimeLabel(noteFile.mime_type)}</Badge>
-											</div>
-											<p class="mt-3 text-sm text-muted-foreground">
-												{noteFile.page_count} page{noteFile.page_count === 1 ? '' : 's'}
-											</p>
-										</div>
-									{/each}
-								</div>
-							{/if}
-						</CardContent>
-					</Card>
-
-					<Card class="border-border/70">
-						<CardHeader class="space-y-2">
-							<CardTitle>Reading order</CardTitle>
-							<CardDescription>
-								Pages stay in order so the reader matches the uploaded sequence.
-							</CardDescription>
-						</CardHeader>
-						<CardContent>
-							{#if notePages.length === 0}
-								<div class="rounded-2xl border border-dashed px-4 py-8 text-center">
-									<p class="font-medium">No pages yet</p>
-									<p class="mt-2 text-sm text-muted-foreground">
-										Page rows appear here after the first successful upload.
-									</p>
-								</div>
-							{:else}
-								<div class="max-h-[50vh] space-y-2 overflow-y-auto pr-1">
-									{#each notePages as notePage (notePage.id)}
-										<div class="rounded-2xl border px-4 py-3">
-											<div class="flex items-start justify-between gap-3">
-												<div class="min-w-0 space-y-1">
-													<p class="truncate font-medium">
-														#{notePage.sort_order + 1} · {getFileName(notePage.note_file_id)}
-													</p>
-													<p class="text-sm text-muted-foreground">
-														Source page {notePage.page_number}
-													</p>
-												</div>
-												<Badge variant="outline">{notePage.sort_order + 1}</Badge>
-											</div>
-										</div>
-									{/each}
-								</div>
-							{/if}
-						</CardContent>
-					</Card>
-				</aside>
+		<section
+			bind:this={viewerToolbarElement}
+			aria-label="Song viewer"
+			class="min-w-0 space-y-5"
+			tabindex="-1"
+		>
+			{#if feedbackMessage}
+				<p aria-live="polite" class={`rounded-2xl border px-4 py-3 text-sm ${feedbackClass}`}>
+					{feedbackMessage}
+				</p>
 			{/if}
-
-			<section class="min-w-0 space-y-5">
-				<div
-					bind:this={viewerToolbarElement}
-					aria-label="Song viewer controls"
-					class="space-y-2"
-					role="region"
-					tabindex="-1"
-				>
-					<div class="flex flex-wrap items-center gap-2">
-						<Badge variant="outline">{isFocusMode ? 'Focus mode' : 'Normal mode'}</Badge>
-						<Badge variant="outline">{viewerPages.length} rendered pages</Badge>
-					</div>
-					<p class="text-sm text-muted-foreground">
-						Choose a layout and zoom any page without affecting the rest of the song.
-					</p>
-					<p class="text-xs text-muted-foreground">
-						Shortcuts: 1, 2, 3 for layout, F for focus mode, and Escape to leave focus mode.
-					</p>
+			{#if viewerPages.length === 0}
+				<Card class="border-border/70">
+					<CardContent class="py-14">
+						<div class="mx-auto max-w-xl space-y-3 text-center">
+							<p class="text-2xl font-semibold tracking-tight">
+								Upload the first note file to start reading.
+							</p>
+							<p class="text-sm leading-6 text-muted-foreground">
+								Tune Bit renders PDFs in the browser on demand and keeps uploaded image files in
+								page order with the same viewer controls.
+							</p>
+							{#if !isFocusMode}
+								<div class="pt-2">
+									<Button onclick={openUploadModal}>Upload Notes</Button>
+								</div>
+							{/if}
+						</div>
+					</CardContent>
+				</Card>
+			{:else}
+				<div class={`grid gap-4 ${viewerGridClass}`}>
+					{#each viewerPages as viewerPage (viewerPage.id)}
+						<SongNotePage
+							fileName={viewerPage.fileName}
+							fileUrl={viewerPage.fileUrl}
+							mimeLabel={viewerPage.mimeLabel}
+							mimeType={viewerPage.mimeType}
+							pageNumber={viewerPage.page_number}
+							sortOrder={viewerPage.sort_order}
+							zoom={getPageZoom(viewerPage.id)}
+							canZoomIn={getPageZoom(viewerPage.id) < MAX_PAGE_ZOOM}
+							canZoomOut={getPageZoom(viewerPage.id) > MIN_PAGE_ZOOM}
+							onDelete={() => openDeleteNoteDialog(viewerPage.note_file_id)}
+							onZoomIn={() => zoomIn(viewerPage.id)}
+							onZoomOut={() => zoomOut(viewerPage.id)}
+							onZoomReset={() => resetZoom(viewerPage.id)}
+						/>
+					{/each}
 				</div>
-				{#if feedbackMessage && isFocusMode}
-					<p aria-live="polite" class={`rounded-2xl border px-4 py-3 text-sm ${feedbackClass}`}>
-						{feedbackMessage}
-					</p>
-				{/if}
-
-				{#if viewerPages.length === 0}
-					<Card class="border-border/70">
-						<CardContent class="py-14">
-							<div class="mx-auto max-w-xl space-y-3 text-center">
-								<p class="text-2xl font-semibold tracking-tight">
-									Upload the first note file to start reading.
-								</p>
-								<p class="text-sm leading-6 text-muted-foreground">
-									Tune Bit renders PDFs in the browser on demand and keeps uploaded image files in
-									page order with the same viewer controls.
-								</p>
-								{#if !isFocusMode}
-									<div class="pt-2">
-										<Button onclick={openUploadModal}>Upload Notes</Button>
-									</div>
-								{/if}
-							</div>
-						</CardContent>
-					</Card>
-				{:else}
-					<div class={`grid gap-4 ${viewerGridClass}`}>
-						{#each viewerPages as viewerPage (viewerPage.id)}
-							<SongNotePage
-								fileName={viewerPage.fileName}
-								fileUrl={viewerPage.fileUrl}
-								mimeLabel={viewerPage.mimeLabel}
-								mimeType={viewerPage.mimeType}
-								pageNumber={viewerPage.page_number}
-								sortOrder={viewerPage.sort_order}
-								zoom={getPageZoom(viewerPage.id)}
-								canZoomIn={getPageZoom(viewerPage.id) < MAX_PAGE_ZOOM}
-								canZoomOut={getPageZoom(viewerPage.id) > MIN_PAGE_ZOOM}
-								onDelete={() => openDeleteNoteDialog(viewerPage.note_file_id)}
-								onZoomIn={() => zoomIn(viewerPage.id)}
-								onZoomOut={() => zoomOut(viewerPage.id)}
-								onZoomReset={() => resetZoom(viewerPage.id)}
-							/>
-						{/each}
-					</div>
-				{/if}
-			</section>
-		</div>
+			{/if}
+		</section>
 
 		{#if !isFocusMode}
 			<dialog
