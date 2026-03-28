@@ -1,6 +1,13 @@
-import { error, redirect } from '@sveltejs/kit';
+import { error, fail, redirect } from '@sveltejs/kit';
+import { deleteStoredSongNoteFile } from '$lib/server/uploads.js';
 
 const APP_PATH = '/app';
+
+function getTextInput(formData: FormData, key: string) {
+	const value = formData.get(key);
+
+	return typeof value === 'string' ? value.trim() : '';
+}
 
 type CollectionRow = {
 	id: string;
@@ -121,4 +128,59 @@ export const load = async ({
 		noteFiles: (noteFiles ?? []) as NoteFileRow[],
 		notePages: (notePages ?? []) as NotePageRow[]
 	};
+};
+
+export const actions = {
+	deleteNoteFile: async ({
+		request,
+		locals,
+		params
+	}: {
+		request: Request;
+		locals: App.Locals;
+		params: { collectionId: string; songId: string };
+	}) => {
+		const user = await requireUser(locals);
+		await Promise.all([
+			loadCollection(locals, user.id, params.collectionId),
+			loadSong(locals, user.id, params.collectionId, params.songId)
+		]);
+
+		const formData = await request.formData();
+		const noteFileId = getTextInput(formData, 'noteFileId');
+		const noteFileName = getTextInput(formData, 'noteFileName');
+
+		if (!noteFileId) {
+			return fail(400, {
+				intent: 'deleteNoteFile',
+				message: 'Choose an uploaded file to delete.'
+			});
+		}
+
+		try {
+			const result = await deleteStoredSongNoteFile({
+				supabase: locals.supabase,
+				userId: user.id,
+				songId: params.songId,
+				noteFileId
+			});
+
+			return {
+				success: true,
+				intent: 'deleteNoteFile',
+				targetId: noteFileId,
+				message: `Removed ${result.fileName || noteFileName || 'that uploaded file'}.`
+			};
+		} catch (deleteError) {
+			return fail(500, {
+				intent: 'deleteNoteFile',
+				targetId: noteFileId,
+				noteFileName,
+				message:
+					deleteError instanceof Error
+						? deleteError.message
+						: 'Could not delete that uploaded file right now.'
+			});
+		}
+	}
 };

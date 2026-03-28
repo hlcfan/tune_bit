@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { Trash2 } from '@lucide/svelte';
 	import { browser } from '$app/environment';
 	import { Badge } from '$lib/components/ui/badge/index.js';
 	import { Button } from '$lib/components/ui/button/index.js';
@@ -54,6 +55,7 @@
 		zoom,
 		canZoomIn,
 		canZoomOut,
+		onDelete,
 		onZoomIn,
 		onZoomOut,
 		onZoomReset
@@ -67,6 +69,7 @@
 		zoom: number;
 		canZoomIn: boolean;
 		canZoomOut: boolean;
+		onDelete: () => void;
 		onZoomIn: () => void;
 		onZoomOut: () => void;
 		onZoomReset: () => void;
@@ -264,6 +267,15 @@
 				class="flex flex-wrap items-center justify-end gap-2"
 				role="group"
 			>
+				<Button
+					aria-label={`Delete ${fileName}`}
+					class="text-destructive hover:text-destructive"
+					size="icon-xs"
+					variant="outline"
+					onclick={onDelete}
+				>
+					<Trash2 />
+				</Button>
 				<Badge variant="outline">{zoomLabel}</Badge>
 				<Button
 					aria-label={`Zoom out ${pageLabel.toLowerCase()}`}

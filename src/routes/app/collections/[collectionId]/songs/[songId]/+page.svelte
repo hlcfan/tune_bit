@@ -56,8 +56,9 @@
 	const MAX_PAGE_ZOOM = 2.25;
 	const PAGE_ZOOM_STEP = 0.25;
 
-	let { data } = $props();
+	let { data, form } = $props();
 	let uploadDialog = $state<HTMLDialogElement | null>(null);
+	let deleteNoteDialog = $state<HTMLDialogElement | null>(null);
 	let uploadInput = $state<HTMLInputElement | null>(null);
 	let selectedUploadFiles = $state<File[]>([]);
 	let uploadProgressItems = $state<UploadProgressItem[]>([]);
@@ -70,12 +71,24 @@
 	let pageZoomById = $state<Record<string, number>>({});
 	let viewerToolbarElement = $state<HTMLDivElement | null>(null);
 	let focusReturnElement = $state<HTMLElement | null>(null);
+	let activeNoteFileId = $state<string | null>(null);
 
 	const noteFiles = $derived((data.noteFiles ?? []) as NoteFile[]);
 	const notePages = $derived((data.notePages ?? []) as NotePage[]);
 	const noteFilesById = $derived(
 		new Map(noteFiles.map((noteFile) => [noteFile.id, noteFile] as const))
 	);
+	const activeNoteFile = $derived(
+		activeNoteFileId ? (noteFilesById.get(activeNoteFileId) ?? null) : null
+	);
+	const activeNoteFileName = $derived(
+		activeNoteFile?.original_filename ??
+			(form?.intent === 'deleteNoteFile' && 'noteFileName' in form
+				? form.noteFileName
+				: 'This uploaded file')
+	);
+	const activeNoteFilePageCount = $derived(activeNoteFile?.page_count ?? 0);
+	const activeDeleteNoteFileId = $derived(activeNoteFile?.id ?? activeNoteFileId ?? '');
 	const viewerPages = $derived(
 		notePages.flatMap((notePage) => {
 			const noteFile = noteFilesById.get(notePage.note_file_id);
@@ -99,6 +112,7 @@
 			? 'border-destructive/30 bg-destructive/5 text-destructive'
 			: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
 	);
+	const deleteNoteFileMessage = $derived(form?.intent === 'deleteNoteFile' ? form.message : null);
 	const totalPages = $derived(notePages.length);
 	const viewerGridClass = $derived(
 		layout === 1
@@ -119,6 +133,15 @@
 	});
 
 	$effect(() => {
+		if (!form?.message) {
+			return;
+		}
+
+		feedbackMessage = form.message;
+		isFeedbackError = !('success' in form && form.success);
+	});
+
+	$effect(() => {
 		const nextPageZoomById = Object.fromEntries(
 			notePages.map((notePage) => [notePage.id, pageZoomById[notePage.id] ?? DEFAULT_PAGE_ZOOM])
 		);
@@ -128,6 +151,30 @@
 			Object.entries(nextPageZoomById).some(([pageId, zoom]) => pageZoomById[pageId] !== zoom)
 		) {
 			pageZoomById = nextPageZoomById;
+		}
+	});
+
+	$effect(() => {
+		if (
+			!deleteNoteDialog ||
+			!form ||
+			form.intent !== 'deleteNoteFile' ||
+			!('targetId' in form) ||
+			!form.targetId
+		) {
+			return;
+		}
+
+		activeNoteFileId = form.targetId;
+
+		if ('success' in form && form.success) {
+			deleteNoteDialog.close();
+			activeNoteFileId = null;
+			return;
+		}
+
+		if (!deleteNoteDialog.open) {
+			deleteNoteDialog.showModal();
 		}
 	});
 
@@ -273,6 +320,15 @@
 
 		isDragActive = false;
 		uploadDialog?.close();
+	}
+
+	function openDeleteNoteDialog(noteFileId: string) {
+		activeNoteFileId = noteFileId;
+		deleteNoteDialog?.showModal();
+	}
+
+	function closeDeleteNoteDialog() {
+		deleteNoteDialog?.close();
 	}
 
 	function handleDragEnter(event: DragEvent) {
@@ -612,8 +668,8 @@
 
 <div class={surfaceClass}>
 	<div class="space-y-6">
-		{#if !isFocusMode}
-			<section class="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+		<section class="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+			{#if !isFocusMode}
 				<div class="space-y-3">
 					<div class="flex flex-wrap items-center gap-2">
 						<a
@@ -635,10 +691,49 @@
 						</p>
 					</div>
 				</div>
+			{/if}
 
-				<Button onclick={openUploadModal}>Upload Notes</Button>
-			</section>
-		{/if}
+			<div class={`flex flex-wrap items-center gap-2 ${isFocusMode ? 'justify-end' : ''}`}>
+				{#if !isFocusMode}
+					<Button onclick={openUploadModal}>Upload Notes</Button>
+				{/if}
+				<div aria-label="Viewer layout" class="flex flex-wrap gap-2" role="group">
+					<Button
+						aria-pressed={layout === 1}
+						variant={layout === 1 ? 'default' : 'outline'}
+						size="sm"
+						onclick={() => setLayout(1)}
+					>
+						1 column
+					</Button>
+					<Button
+						aria-pressed={layout === 2}
+						variant={layout === 2 ? 'default' : 'outline'}
+						size="sm"
+						onclick={() => setLayout(2)}
+					>
+						2 columns
+					</Button>
+					<Button
+						aria-pressed={layout === 3}
+						variant={layout === 3 ? 'default' : 'outline'}
+						size="sm"
+						onclick={() => setLayout(3)}
+					>
+						3 columns
+					</Button>
+				</div>
+				<Button
+					aria-pressed={isFocusMode}
+					data-focus-mode-toggle="true"
+					variant={isFocusMode ? 'default' : 'outline'}
+					size="sm"
+					onclick={toggleFocusMode}
+				>
+					{isFocusMode ? 'Exit focus mode' : 'Enter focus mode'}
+				</Button>
+			</div>
+		</section>
 
 		<div class={isFocusMode ? '' : 'grid gap-6 xl:grid-cols-[320px_minmax(0,1fr)]'}>
 			{#if !isFocusMode}
@@ -753,71 +848,26 @@
 				<div
 					bind:this={viewerToolbarElement}
 					aria-label="Song viewer controls"
-					class={`sticky z-20 rounded-3xl border border-border/70 bg-background/95 p-4 backdrop-blur ${isFocusMode ? 'top-0 shadow-lg' : 'top-3'}`}
+					class="space-y-2"
 					role="region"
 					tabindex="-1"
 				>
-					<div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-						<div class="space-y-1">
-							<div class="flex flex-wrap items-center gap-2">
-								<Badge variant="outline">{isFocusMode ? 'Focus mode' : 'Normal mode'}</Badge>
-								<Badge variant="outline">{viewerPages.length} rendered pages</Badge>
-							</div>
-							<p class="text-lg font-semibold tracking-tight">{data.song.title}</p>
-							<p class="text-sm text-muted-foreground">
-								Choose a layout and zoom any page without affecting the rest of the song.
-							</p>
-							<p class="text-xs text-muted-foreground">
-								Shortcuts: 1, 2, 3 for layout, F for focus mode, and Escape to leave focus mode.
-							</p>
-						</div>
-
-						<div class="flex flex-col gap-3 lg:items-end">
-							<div aria-label="Viewer layout" class="flex flex-wrap gap-2" role="group">
-								<Button
-									aria-pressed={layout === 1}
-									variant={layout === 1 ? 'default' : 'outline'}
-									size="sm"
-									onclick={() => setLayout(1)}
-								>
-									1 column
-								</Button>
-								<Button
-									aria-pressed={layout === 2}
-									variant={layout === 2 ? 'default' : 'outline'}
-									size="sm"
-									onclick={() => setLayout(2)}
-								>
-									2 columns
-								</Button>
-								<Button
-									aria-pressed={layout === 3}
-									variant={layout === 3 ? 'default' : 'outline'}
-									size="sm"
-									onclick={() => setLayout(3)}
-								>
-									3 columns
-								</Button>
-							</div>
-
-							<div class="flex flex-wrap gap-2">
-								{#if !isFocusMode}
-									<Button size="sm" variant="outline" onclick={openUploadModal}>Upload Notes</Button
-									>
-								{/if}
-								<Button
-									aria-pressed={isFocusMode}
-									data-focus-mode-toggle="true"
-									variant={isFocusMode ? 'default' : 'outline'}
-									size="sm"
-									onclick={toggleFocusMode}
-								>
-									{isFocusMode ? 'Exit focus mode' : 'Enter focus mode'}
-								</Button>
-							</div>
-						</div>
+					<div class="flex flex-wrap items-center gap-2">
+						<Badge variant="outline">{isFocusMode ? 'Focus mode' : 'Normal mode'}</Badge>
+						<Badge variant="outline">{viewerPages.length} rendered pages</Badge>
 					</div>
+					<p class="text-sm text-muted-foreground">
+						Choose a layout and zoom any page without affecting the rest of the song.
+					</p>
+					<p class="text-xs text-muted-foreground">
+						Shortcuts: 1, 2, 3 for layout, F for focus mode, and Escape to leave focus mode.
+					</p>
 				</div>
+				{#if feedbackMessage && isFocusMode}
+					<p aria-live="polite" class={`rounded-2xl border px-4 py-3 text-sm ${feedbackClass}`}>
+						{feedbackMessage}
+					</p>
+				{/if}
 
 				{#if viewerPages.length === 0}
 					<Card class="border-border/70">
@@ -851,6 +901,7 @@
 								zoom={getPageZoom(viewerPage.id)}
 								canZoomIn={getPageZoom(viewerPage.id) < MAX_PAGE_ZOOM}
 								canZoomOut={getPageZoom(viewerPage.id) > MIN_PAGE_ZOOM}
+								onDelete={() => openDeleteNoteDialog(viewerPage.note_file_id)}
 								onZoomIn={() => zoomIn(viewerPage.id)}
 								onZoomOut={() => zoomOut(viewerPage.id)}
 								onZoomReset={() => resetZoom(viewerPage.id)}
@@ -969,5 +1020,45 @@
 				</div>
 			</dialog>
 		{/if}
+
+		<dialog
+			bind:this={deleteNoteDialog}
+			class="m-auto w-full max-w-xl rounded-3xl border bg-background p-0 text-foreground shadow-2xl backdrop:bg-background/70"
+		>
+			<div class="space-y-6 p-6">
+				<div class="space-y-2">
+					<Badge variant="outline" class="w-fit">Delete note</Badge>
+					<h2 class="text-2xl font-semibold tracking-tight">Delete uploaded note</h2>
+					<p class="max-w-xl text-sm leading-6 text-muted-foreground">
+						Remove this uploaded file and every page it adds to the song viewer.
+					</p>
+				</div>
+
+				{#if deleteNoteFileMessage}
+					<p
+						class="rounded-2xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive"
+					>
+						{deleteNoteFileMessage}
+					</p>
+				{/if}
+
+				<div class="rounded-2xl border px-4 py-4 text-sm text-muted-foreground">
+					<p class="font-medium text-foreground">{activeNoteFileName}</p>
+					<p class="mt-2 leading-6">
+						{activeNoteFilePageCount} page{activeNoteFilePageCount === 1 ? '' : 's'} will be removed from
+						the song. This action cannot be undone.
+					</p>
+				</div>
+
+				<form method="POST" action="?/deleteNoteFile" class="space-y-4">
+					<input type="hidden" name="noteFileId" value={activeDeleteNoteFileId} />
+					<input type="hidden" name="noteFileName" value={activeNoteFileName} />
+					<div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+						<Button type="button" variant="ghost" onclick={closeDeleteNoteDialog}>Cancel</Button>
+						<Button type="submit" variant="destructive">Delete note</Button>
+					</div>
+				</form>
+			</div>
+		</dialog>
 	</div>
 </div>

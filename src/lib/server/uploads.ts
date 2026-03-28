@@ -38,6 +38,13 @@ export type PreparedUpload = {
 	uploadHeaders: Record<string, string>;
 };
 
+type DeleteStoredSongNoteFileInput = {
+	supabase: SupabaseClient;
+	userId: string;
+	songId: string;
+	noteFileId: string;
+};
+
 type PrepareDirectUploadInput = {
 	files: UploadDraft[];
 	songId: string;
@@ -602,4 +609,96 @@ export async function finalizeUploadedSongFiles({
 
 export async function cleanupPreparedUploads(storageKeys: string[]) {
 	await removeUploadedObjects(storageKeys);
+}
+
+export async function deleteStoredSongNoteFile({
+	supabase,
+	userId,
+	songId,
+	noteFileId
+}: DeleteStoredSongNoteFileInput) {
+	const { data: noteFile, error: noteFileError } = await supabase
+		.from('note_files')
+		.select('id, original_filename, storage_key')
+		.eq('id', noteFileId)
+		.eq('song_id', songId)
+		.eq('user_id', userId)
+		.maybeSingle();
+
+	if (noteFileError) {
+		throw new Error('Could not load that uploaded file right now.');
+	}
+
+	if (!noteFile) {
+		throw new Error('That uploaded file could not be found.');
+	}
+
+	const { error: deleteNoteFileError } = await supabase
+		.from('note_files')
+		.delete()
+		.eq('id', noteFileId)
+		.eq('song_id', songId)
+		.eq('user_id', userId);
+
+	if (deleteNoteFileError) {
+		throw new Error('Could not delete that uploaded file right now.');
+	}
+
+	const { data: remainingNotePages, error: remainingNotePagesError } = await supabase
+		.from('note_pages')
+		.select('id, sort_order')
+		.eq('user_id', userId)
+		.eq('song_id', songId)
+		.order('sort_order', { ascending: true });
+
+	if (remainingNotePagesError) {
+		throw new Error('Could not refresh the page order right now.');
+	}
+
+	const maxSortOrder = Math.max(
+		-1,
+		...(remainingNotePages ?? []).map((notePage) => notePage.sort_order)
+	);
+	const sortOrderOffset = maxSortOrder + (remainingNotePages?.length ?? 0) + 1;
+	const temporaryReorderResults = await Promise.all(
+		(remainingNotePages ?? []).map((notePage) =>
+			supabase
+				.from('note_pages')
+				.update({ sort_order: notePage.sort_order + sortOrderOffset })
+				.eq('id', notePage.id)
+				.eq('song_id', songId)
+				.eq('user_id', userId)
+		)
+	);
+
+	if (temporaryReorderResults.some((result) => result.error)) {
+		throw new Error('Could not refresh the page order right now.');
+	}
+
+	const finalReorderResults = await Promise.all(
+		(remainingNotePages ?? []).map((notePage, index) =>
+			supabase
+				.from('note_pages')
+				.update({ sort_order: index })
+				.eq('id', notePage.id)
+				.eq('song_id', songId)
+				.eq('user_id', userId)
+		)
+	);
+
+	if (finalReorderResults.some((result) => result.error)) {
+		throw new Error('Could not refresh the page order right now.');
+	}
+
+	await supabase
+		.from('songs')
+		.update({ updated_at: new Date().toISOString() })
+		.eq('id', songId)
+		.eq('user_id', userId);
+
+	await removeUploadedObjects([noteFile.storage_key]);
+
+	return {
+		fileName: noteFile.original_filename
+	};
 }
