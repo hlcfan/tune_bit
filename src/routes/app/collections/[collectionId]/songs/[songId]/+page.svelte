@@ -118,7 +118,7 @@
 				: 'grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3'
 	);
 	const surfaceClass = $derived(
-		isFocusMode ? 'fixed inset-0 z-50 overflow-y-auto bg-background px-4 py-4 sm:px-6 sm:py-6' : ''
+		isFocusMode ? 'fixed inset-0 z-50 overflow-y-auto bg-background px-3 py-3 sm:px-4 sm:py-4' : ''
 	);
 
 	$effect(() => {
@@ -661,8 +661,8 @@
 
 <div class={surfaceClass}>
 	<div class="space-y-6">
-		<section class="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
-			{#if !isFocusMode}
+		{#if !isFocusMode}
+			<section class="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
 				<div class="space-y-3">
 					<div class="flex flex-wrap items-center gap-2">
 						<a
@@ -684,55 +684,105 @@
 						</p>
 					</div>
 				</div>
-			{/if}
 
-			<div class={`flex flex-wrap items-center gap-2 ${isFocusMode ? 'justify-end' : ''}`}>
-				{#if !isFocusMode}
+				<div class="flex flex-wrap items-center gap-2">
 					<Button onclick={openUploadModal}>Upload Notes</Button>
-				{/if}
-				<div aria-label="Viewer layout" class="flex flex-wrap gap-2" role="group">
+					<div aria-label="Viewer layout" class="flex flex-wrap gap-2" role="group">
+						<Button
+							aria-pressed={layout === 1}
+							variant={layout === 1 ? 'default' : 'outline'}
+							size="sm"
+							title="Press 1 key for 1-column layout"
+							onclick={() => setLayout(1)}
+						>
+							1 column
+						</Button>
+						<Button
+							aria-pressed={layout === 2}
+							variant={layout === 2 ? 'default' : 'outline'}
+							size="sm"
+							title="Press 2 key for 2-column layout"
+							onclick={() => setLayout(2)}
+						>
+							2 columns
+						</Button>
+						<Button
+							aria-pressed={layout === 3}
+							variant={layout === 3 ? 'default' : 'outline'}
+							size="sm"
+							title="Press 3 key for 3-column layout"
+							onclick={() => setLayout(3)}
+						>
+							3 columns
+						</Button>
+					</div>
 					<Button
-						aria-pressed={layout === 1}
-						variant={layout === 1 ? 'default' : 'outline'}
+						aria-pressed={isFocusMode}
+						data-focus-mode-toggle="true"
+						variant={isFocusMode ? 'default' : 'outline'}
 						size="sm"
-						title="Press 1 key for 1-column layout"
-						onclick={() => setLayout(1)}
+						title={isFocusMode
+							? 'Press Escape key to exit focus mode'
+							: 'Press F key to enter focus mode'}
+						onclick={toggleFocusMode}
 					>
-						1 column
-					</Button>
-					<Button
-						aria-pressed={layout === 2}
-						variant={layout === 2 ? 'default' : 'outline'}
-						size="sm"
-						title="Press 2 key for 2-column layout"
-						onclick={() => setLayout(2)}
-					>
-						2 columns
-					</Button>
-					<Button
-						aria-pressed={layout === 3}
-						variant={layout === 3 ? 'default' : 'outline'}
-						size="sm"
-						title="Press 3 key for 3-column layout"
-						onclick={() => setLayout(3)}
-					>
-						3 columns
+						{isFocusMode ? 'Exit focus mode' : 'Enter focus mode'}
 					</Button>
 				</div>
-				<Button
-					aria-pressed={isFocusMode}
-					data-focus-mode-toggle="true"
-					variant={isFocusMode ? 'default' : 'outline'}
-					size="sm"
-					title={isFocusMode
-						? 'Press Escape key to exit focus mode'
-						: 'Press F key to enter focus mode'}
-					onclick={toggleFocusMode}
+			</section>
+		{:else}
+			<div class="pointer-events-none fixed inset-x-0 top-3 z-[60] flex justify-center">
+				<div
+					aria-label="Focus mode toolbar"
+					class="pointer-events-auto inline-flex items-center gap-1 rounded-full border border-border/70 bg-background/90 p-1 shadow-lg backdrop-blur"
+					role="toolbar"
 				>
-					{isFocusMode ? 'Exit focus mode' : 'Enter focus mode'}
-				</Button>
+					<div aria-label="Viewer layout" class="flex items-center gap-1" role="group">
+						<Button
+							aria-label="Switch to 1-column layout"
+							aria-pressed={layout === 1}
+							variant={layout === 1 ? 'default' : 'ghost'}
+							size="xs"
+							title="Press 1 key for 1-column layout"
+							onclick={() => setLayout(1)}
+						>
+							1
+						</Button>
+						<Button
+							aria-label="Switch to 2-column layout"
+							aria-pressed={layout === 2}
+							variant={layout === 2 ? 'default' : 'ghost'}
+							size="xs"
+							title="Press 2 key for 2-column layout"
+							onclick={() => setLayout(2)}
+						>
+							2
+						</Button>
+						<Button
+							aria-label="Switch to 3-column layout"
+							aria-pressed={layout === 3}
+							variant={layout === 3 ? 'default' : 'ghost'}
+							size="xs"
+							title="Press 3 key for 3-column layout"
+							onclick={() => setLayout(3)}
+						>
+							3
+						</Button>
+					</div>
+					<Button
+						aria-label="Exit focus mode"
+						aria-pressed={isFocusMode}
+						data-focus-mode-toggle="true"
+						variant="outline"
+						size="xs"
+						title="Press Escape key to exit focus mode"
+						onclick={toggleFocusMode}
+					>
+						Exit
+					</Button>
+				</div>
 			</div>
-		</section>
+		{/if}
 
 		<section
 			bind:this={viewerToolbarElement}

@@ -157,6 +157,7 @@
 - Simplified collection detail screens around the song list and moved note uploads into a song-page modal while keeping the note list and viewer on the same screen.
 - Enhanced song-page note deletion so modal submissions stay in place without leaving the route on a named action URL.
 - Verified the simplified UI slice with typecheck, lint, production build, and a live local preview.
+- Refined the focus-mode toolbar into a smaller centered floating bar so layout and exit controls stay accessible without pushing down the note viewer or introducing extra visual chrome.
 
 ### Next Recommended Slice
 
