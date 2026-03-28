@@ -13,7 +13,7 @@
 - [x] Database schema and security
 - [x] Collections and songs
 - [x] Upload pipeline and storage
-- [ ] Note viewer
+- [x] Note viewer
 - [ ] Hardening and QA
 
 ## Milestone Checklist
@@ -67,15 +67,15 @@
 
 ### 6. Note Viewer
 
-- [ ] Build song viewer screen
-- [ ] Add one-column layout
-- [ ] Add two-column layout
-- [ ] Add three-column layout
-- [ ] Add normal mode
-- [ ] Add focus mode
-- [ ] Add per-page zoom controls
-- [ ] Render PDFs on demand in browser
-- [ ] Render uploaded images in page order
+- [x] Build song viewer screen
+- [x] Add one-column layout
+- [x] Add two-column layout
+- [x] Add three-column layout
+- [x] Add normal mode
+- [x] Add focus mode
+- [x] Add per-page zoom controls
+- [x] Render PDFs on demand in browser
+- [x] Render uploaded images in page order
 
 ### 7. Hardening and QA
 
@@ -130,7 +130,11 @@
 - Added collection-level quick upload and a song workspace route for direct multi-file uploads plus note_files and note_pages persistence.
 - Switched uploads to server-generated signed R2 URLs, browser-to-R2 transfer, protected finalize callbacks, and cleanup callbacks for failed direct uploads.
 - Verified the phase 5 slice with typecheck, lint, and production build commands.
+- Turned the song workspace into a note viewer with one, two, and three-column layouts plus normal and focus modes.
+- Added protected file streaming routes and browser-side PDF rendering with on-demand page loading for private R2 assets.
+- Added independent per-page zoom controls for both PDF and image note pages while keeping upload and page-order management in the same song screen.
+- Verified the phase 6 slice with typecheck, lint, and production build commands.
 
 ### Next Recommended Slice
 
-- Build the note viewer on top of the new upload metadata, starting with ordered page rendering and PDF display in the browser.
+- Start hardening and QA for auth boundaries, upload reliability, viewer accessibility, and larger song performance.

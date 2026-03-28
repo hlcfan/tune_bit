@@ -240,6 +240,18 @@ async function getUploadedObjectBytes(storageKey: string) {
 	return new Uint8Array(await response.Body.transformToByteArray());
 }
 
+export async function getStoredObject(storageKey: string) {
+	const client = getStorageClient();
+	const { bucket } = getStorageEnvironment();
+
+	return client.send(
+		new GetObjectCommand({
+			Bucket: bucket,
+			Key: storageKey
+		})
+	);
+}
+
 async function assertUploadedObjectExists(storageKey: string) {
 	const client = getStorageClient();
 	const { bucket } = getStorageEnvironment();

@@ -509,7 +509,7 @@
 												songId: song.id
 											})}
 										>
-											Open song workspace
+											Open song viewer
 										</a>
 										<Button type="submit" variant="outline">Save song name</Button>
 									</div>

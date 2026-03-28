@@ -19,7 +19,6 @@ type NoteFileRow = {
 	original_filename: string;
 	mime_type: string;
 	page_count: number;
-	storage_key: string;
 	created_at: string;
 };
 
@@ -99,7 +98,7 @@ export const load = async ({
 		await Promise.all([
 			locals.supabase
 				.from('note_files')
-				.select('id, original_filename, mime_type, page_count, storage_key, created_at')
+				.select('id, original_filename, mime_type, page_count, created_at')
 				.eq('user_id', user.id)
 				.eq('song_id', params.songId)
 				.order('created_at', { ascending: true }),
