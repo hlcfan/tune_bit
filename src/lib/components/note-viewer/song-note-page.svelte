@@ -87,7 +87,6 @@
 	const isPdf = $derived(mimeType === 'application/pdf');
 	const pageLabel = $derived(`Page ${sortOrder + 1}`);
 	const zoomLabel = $derived(`${Math.round(zoom * 100)}%`);
-	const sourceLabel = $derived(isPdf ? `Source page ${pageNumber}` : `Image page ${sortOrder + 1}`);
 	const pageHeadingId = $derived(`song-note-page-${sortOrder + 1}`);
 
 	$effect(() => {
@@ -251,14 +250,13 @@
 >
 	<div class="space-y-4">
 		<div class="flex flex-wrap items-start justify-between gap-3">
-			<div class="space-y-2">
+			<div class="min-w-0">
 				<div class="flex flex-wrap items-center gap-2">
 					<Badge variant="outline">{pageLabel}</Badge>
 					<Badge variant="outline">{mimeLabel}</Badge>
-				</div>
-				<div class="space-y-1">
-					<p id={pageHeadingId} class="font-medium break-all">{fileName}</p>
-					<p class="text-sm text-muted-foreground">{sourceLabel}</p>
+					<p id={pageHeadingId} class="min-w-0 font-medium break-all">
+						{fileName}
+					</p>
 				</div>
 			</div>
 
@@ -309,7 +307,7 @@
 		<div
 			bind:this={canvasContainer}
 			aria-busy={isPdf ? isLoading : !imageLoaded && !errorMessage}
-			class="overflow-auto rounded-2xl border bg-muted/20 p-3"
+			class="overflow-auto rounded-2xl bg-muted/20 p-3"
 		>
 			{#if isPdf}
 				{#if !isVisible}
@@ -344,7 +342,7 @@
 					{/if}
 					<img
 						src={fileUrl}
-						alt={`${fileName} ${sourceLabel.toLowerCase()}`}
+						alt={`${fileName} page ${sortOrder + 1}`}
 						loading="lazy"
 						class={`mx-auto h-auto max-w-none rounded-xl bg-white shadow-sm transition-opacity ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
 						style={`width: ${zoom * 100}%`}
