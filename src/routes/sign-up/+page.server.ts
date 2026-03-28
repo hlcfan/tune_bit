@@ -28,9 +28,9 @@ function shouldUseDevelopmentSignupFallback(message: string) {
 }
 
 export const load = async ({ locals, url }: { locals: App.Locals; url: URL }) => {
-	const { session } = await locals.safeGetSession();
+	const { user } = await locals.safeGetSession();
 
-	if (session) {
+	if (user) {
 		redirect(303, normalizeRedirectTo(url.searchParams.get('redirectTo')));
 	}
 

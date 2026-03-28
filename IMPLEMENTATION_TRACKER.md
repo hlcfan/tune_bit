@@ -14,7 +14,7 @@
 - [x] Collections and songs
 - [x] Upload pipeline and storage
 - [x] Note viewer
-- [ ] Hardening and QA
+- [~] Hardening and QA
 
 ## Milestone Checklist
 
@@ -79,12 +79,12 @@
 
 ### 7. Hardening and QA
 
-- [ ] Validate auth protections
+- [x] Validate auth protections
 - [ ] Validate RLS protections
-- [ ] Validate upload reliability
+- [x] Validate upload reliability
 - [ ] Validate page ordering
-- [ ] Validate keyboard accessibility
-- [ ] Review viewer performance for larger PDFs
+- [x] Validate keyboard accessibility
+- [x] Review viewer performance for larger PDFs
 
 ## Implementation Notes
 
@@ -134,7 +134,12 @@
 - Added protected file streaming routes and browser-side PDF rendering with on-demand page loading for private R2 assets.
 - Added independent per-page zoom controls for both PDF and image note pages while keeping upload and page-order management in the same song screen.
 - Verified the phase 6 slice with typecheck, lint, and production build commands.
+- Hardened server-side auth checks to rely on verified users, aligned signed-in UI state with authenticated user presence, and removed the recurring Supabase session warning during development.
+- Improved upload resilience on both upload surfaces by validating one prepared upload per selected file and by tracking duplicate filenames with stable per-file progress ids.
+- Improved viewer keyboard accessibility with focus restoration, layout and focus shortcuts, clearer live regions, and more descriptive per-page zoom controls.
+- Improved larger-PDF delivery by adding byte-range and HEAD support on protected file routes while keeping progressive page rendering in place.
+- Verified the phase 7 hardening slice with typecheck, lint, and production build commands.
 
 ### Next Recommended Slice
 
-- Start hardening and QA for auth boundaries, upload reliability, viewer accessibility, and larger song performance.
+- Finish phase 7 by validating row-level security behavior and verifying page ordering against real multi-file uploads.

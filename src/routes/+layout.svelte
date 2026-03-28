@@ -38,7 +38,7 @@
 					>
 						Overview
 					</a>
-					{#if data.session}
+					{#if data.user}
 						<a
 							class="rounded-full px-3 py-2 text-muted-foreground transition-colors hover:text-foreground"
 							href={resolve('/app')}
@@ -61,7 +61,7 @@
 					{/if}
 				</nav>
 
-				{#if data.session}
+				{#if data.user}
 					<div class="flex items-center gap-3">
 						<p class="hidden text-sm text-muted-foreground lg:block">{data.user?.email}</p>
 						<form method="POST" action={resolve('/auth/sign-out')}>

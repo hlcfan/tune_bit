@@ -98,7 +98,7 @@
 					<div class="rounded-2xl border border-dashed px-4 py-4">
 						<p class="text-sm text-muted-foreground">Current access state</p>
 						<p class="mt-2 text-base font-medium">
-							{data.session
+							{data.user
 								? 'Signed in and ready for protected app routes.'
 								: 'Signed out until auth completes.'}
 						</p>
@@ -118,7 +118,7 @@
 				</div>
 
 				<div class="flex flex-col gap-3 sm:flex-row">
-					{#if data.session}
+					{#if data.user}
 						<a class={buttonVariants({})} href={resolve('/app')}>Open protected app</a>
 					{:else}
 						<a class={buttonVariants({})} href={resolve('/sign-up')}>Create an account</a>

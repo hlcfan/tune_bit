@@ -22,6 +22,7 @@
 	};
 
 	type UploadProgressItem = {
+		id: string;
 		fileName: string;
 		progress: number;
 		status: 'pending' | 'uploading' | 'uploaded' | 'failed';
@@ -90,10 +91,15 @@
 		quickUploadDialog?.close();
 	}
 
+	function getQuickUploadProgressItemId(file: File, index: number) {
+		return `${index}-${file.name}-${file.lastModified}-${file.size}`;
+	}
+
 	function updateQuickUploadFiles() {
 		const selectedFiles = Array.from(quickUploadInput?.files ?? []);
 		quickUploadFiles = selectedFiles.map((file) => file.name);
-		quickUploadProgressItems = selectedFiles.map((file) => ({
+		quickUploadProgressItems = selectedFiles.map((file, index) => ({
+			id: getQuickUploadProgressItemId(file, index),
 			fileName: file.name,
 			progress: 0,
 			status: 'pending'
@@ -105,12 +111,12 @@
 	}
 
 	function updateQuickUploadProgressItem(
-		fileName: string,
+		progressItemId: string,
 		progress: number,
 		status: UploadProgressItem['status']
 	) {
 		quickUploadProgressItems = quickUploadProgressItems.map((item) =>
-			item.fileName === fileName
+			item.id === progressItemId
 				? {
 						...item,
 						progress,
@@ -148,7 +154,7 @@
 		return 'bg-foreground';
 	}
 
-	function uploadFileWithProgress(file: File, upload: PreparedUpload) {
+	function uploadFileWithProgress(file: File, upload: PreparedUpload, progressItemId: string) {
 		return new Promise<void>((resolveUpload, rejectUpload) => {
 			const request = new XMLHttpRequest();
 
@@ -160,36 +166,36 @@
 
 			request.upload.addEventListener('progress', (event) => {
 				if (!event.lengthComputable) {
-					updateQuickUploadProgressItem(file.name, 0, 'uploading');
+					updateQuickUploadProgressItem(progressItemId, 0, 'uploading');
 					return;
 				}
 
 				const progress = Math.min(100, Math.round((event.loaded / event.total) * 100));
-				updateQuickUploadProgressItem(file.name, progress, 'uploading');
+				updateQuickUploadProgressItem(progressItemId, progress, 'uploading');
 			});
 
 			request.addEventListener('load', () => {
 				if (request.status >= 200 && request.status < 300) {
-					updateQuickUploadProgressItem(file.name, 100, 'uploaded');
+					updateQuickUploadProgressItem(progressItemId, 100, 'uploaded');
 					resolveUpload();
 					return;
 				}
 
-				updateQuickUploadProgressItem(file.name, 0, 'failed');
+				updateQuickUploadProgressItem(progressItemId, 0, 'failed');
 				rejectUpload(new Error(`Could not upload ${file.name} to storage.`));
 			});
 
 			request.addEventListener('error', () => {
-				updateQuickUploadProgressItem(file.name, 0, 'failed');
+				updateQuickUploadProgressItem(progressItemId, 0, 'failed');
 				rejectUpload(new Error(`Could not upload ${file.name} to storage.`));
 			});
 
 			request.addEventListener('abort', () => {
-				updateQuickUploadProgressItem(file.name, 0, 'failed');
+				updateQuickUploadProgressItem(progressItemId, 0, 'failed');
 				rejectUpload(new Error(`Could not upload ${file.name} to storage.`));
 			});
 
-			updateQuickUploadProgressItem(file.name, 0, 'uploading');
+			updateQuickUploadProgressItem(progressItemId, 0, 'uploading');
 			request.send(file);
 		});
 	}
@@ -296,14 +302,19 @@
 			songId = prepareBody.songId;
 			uploads = prepareBody.uploads ?? [];
 
+			if (uploads.length !== files.length) {
+				throw new Error('Could not confirm an upload plan for every selected file.');
+			}
+
 			for (const [index, upload] of uploads.entries()) {
 				const file = files[index];
+				const progressItem = quickUploadProgressItems[index];
 
-				if (!file) {
+				if (!file || !progressItem || upload.originalFilename !== file.name) {
 					throw new Error('Could not match the selected files to the upload plan.');
 				}
 
-				await uploadFileWithProgress(file, upload);
+				await uploadFileWithProgress(file, upload, progressItem.id);
 			}
 
 			const finalizeResponse = await fetch(getFinalizeUploadPath(songId), {
@@ -599,7 +610,7 @@
 				{/if}
 
 				{#if quickUploadProgressItems.length > 0}
-					<div class="rounded-2xl border px-4 py-4">
+					<div aria-live="polite" class="rounded-2xl border px-4 py-4">
 						<div class="flex items-center justify-between gap-3">
 							<p class="text-sm font-medium">Upload progress</p>
 							<p class="text-sm text-muted-foreground">
@@ -609,7 +620,7 @@
 							</p>
 						</div>
 						<div class="mt-4 space-y-3">
-							{#each quickUploadProgressItems as item (`${item.fileName}-${item.status}-${item.progress}`)}
+							{#each quickUploadProgressItems as item (item.id)}
 								<div class="space-y-2">
 									<div class="flex items-center justify-between gap-3 text-sm">
 										<p class="truncate font-medium">{item.fileName}</p>

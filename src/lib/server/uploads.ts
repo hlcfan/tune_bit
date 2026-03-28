@@ -240,12 +240,25 @@ async function getUploadedObjectBytes(storageKey: string) {
 	return new Uint8Array(await response.Body.transformToByteArray());
 }
 
-export async function getStoredObject(storageKey: string) {
+export async function getStoredObject(storageKey: string, options?: { range?: string }) {
 	const client = getStorageClient();
 	const { bucket } = getStorageEnvironment();
 
 	return client.send(
 		new GetObjectCommand({
+			Bucket: bucket,
+			Key: storageKey,
+			Range: options?.range
+		})
+	);
+}
+
+export async function getStoredObjectMetadata(storageKey: string) {
+	const client = getStorageClient();
+	const { bucket } = getStorageEnvironment();
+
+	return client.send(
+		new HeadObjectCommand({
 			Bucket: bucket,
 			Key: storageKey
 		})

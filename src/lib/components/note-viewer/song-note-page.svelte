@@ -85,6 +85,7 @@
 	const pageLabel = $derived(`Page ${sortOrder + 1}`);
 	const zoomLabel = $derived(`${Math.round(zoom * 100)}%`);
 	const sourceLabel = $derived(isPdf ? `Source page ${pageNumber}` : `Image page ${sortOrder + 1}`);
+	const pageHeadingId = $derived(`song-note-page-${sortOrder + 1}`);
 
 	$effect(() => {
 		if (!browser || !pageElement) {
@@ -238,7 +239,13 @@
 	}
 </script>
 
-<div bind:this={pageElement} class="rounded-3xl border border-border/70 bg-card/95 p-4 shadow-sm">
+<div
+	bind:this={pageElement}
+	aria-labelledby={pageHeadingId}
+	class="rounded-3xl border border-border/70 bg-card/95 p-4 shadow-sm"
+	role="group"
+	style="content-visibility: auto; contain-intrinsic-size: 900px;"
+>
 	<div class="space-y-4">
 		<div class="flex flex-wrap items-start justify-between gap-3">
 			<div class="space-y-2">
@@ -247,20 +254,51 @@
 					<Badge variant="outline">{mimeLabel}</Badge>
 				</div>
 				<div class="space-y-1">
-					<p class="font-medium break-all">{fileName}</p>
+					<p id={pageHeadingId} class="font-medium break-all">{fileName}</p>
 					<p class="text-sm text-muted-foreground">{sourceLabel}</p>
 				</div>
 			</div>
 
-			<div class="flex flex-wrap items-center justify-end gap-2">
+			<div
+				aria-label={`Zoom controls for ${pageLabel.toLowerCase()}`}
+				class="flex flex-wrap items-center justify-end gap-2"
+				role="group"
+			>
 				<Badge variant="outline">{zoomLabel}</Badge>
-				<Button size="xs" variant="outline" disabled={!canZoomOut} onclick={onZoomOut}>−</Button>
-				<Button size="xs" variant="outline" onclick={onZoomReset}>Reset</Button>
-				<Button size="xs" variant="outline" disabled={!canZoomIn} onclick={onZoomIn}>+</Button>
+				<Button
+					aria-label={`Zoom out ${pageLabel.toLowerCase()}`}
+					size="xs"
+					variant="outline"
+					disabled={!canZoomOut}
+					onclick={onZoomOut}
+				>
+					−
+				</Button>
+				<Button
+					aria-label={`Reset zoom for ${pageLabel.toLowerCase()}`}
+					size="xs"
+					variant="outline"
+					onclick={onZoomReset}
+				>
+					Reset
+				</Button>
+				<Button
+					aria-label={`Zoom in ${pageLabel.toLowerCase()}`}
+					size="xs"
+					variant="outline"
+					disabled={!canZoomIn}
+					onclick={onZoomIn}
+				>
+					+
+				</Button>
 			</div>
 		</div>
 
-		<div bind:this={canvasContainer} class="overflow-auto rounded-2xl border bg-muted/20 p-3">
+		<div
+			bind:this={canvasContainer}
+			aria-busy={isPdf ? isLoading : !imageLoaded && !errorMessage}
+			class="overflow-auto rounded-2xl border bg-muted/20 p-3"
+		>
 			{#if isPdf}
 				{#if !isVisible}
 					<div class="aspect-[8.5/11] animate-pulse rounded-xl bg-muted"></div>

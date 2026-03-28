@@ -13,7 +13,7 @@
 		CardHeader,
 		CardTitle
 	} from '$lib/components/ui/card/index.js';
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
 
 	type PreparedUpload = {
 		originalFilename: string;
@@ -24,6 +24,7 @@
 	};
 
 	type UploadProgressItem = {
+		id: string;
 		fileName: string;
 		progress: number;
 		status: 'pending' | 'uploading' | 'uploaded' | 'failed';
@@ -65,6 +66,8 @@
 	let layout = $state<ViewerLayout>(1);
 	let isFocusMode = $state(false);
 	let pageZoomById = $state<Record<string, number>>({});
+	let viewerToolbarElement = $state<HTMLDivElement | null>(null);
+	let focusReturnElement = $state<HTMLElement | null>(null);
 
 	const noteFiles = $derived((data.noteFiles ?? []) as NoteFile[]);
 	const notePages = $derived((data.notePages ?? []) as NotePage[]);
@@ -136,15 +139,31 @@
 			layout = Number(storedLayout) as ViewerLayout;
 		}
 
-		isFocusMode = window.sessionStorage.getItem(FOCUS_STORAGE_KEY) === 'true';
+		if (window.sessionStorage.getItem(FOCUS_STORAGE_KEY) === 'true') {
+			void setFocusMode(true);
+		}
 
 		const handleKeydown = (event: KeyboardEvent) => {
-			if (event.key !== 'Escape' || !isFocusMode) {
+			if (!canHandleViewerShortcut(event.target)) {
 				return;
 			}
 
-			isFocusMode = false;
-			window.sessionStorage.setItem(FOCUS_STORAGE_KEY, 'false');
+			if (event.key === 'Escape' && isFocusMode) {
+				event.preventDefault();
+				void setFocusMode(false);
+				return;
+			}
+
+			if (event.key === '1' || event.key === '2' || event.key === '3') {
+				event.preventDefault();
+				setLayout(Number(event.key) as ViewerLayout);
+				return;
+			}
+
+			if (event.key.toLowerCase() === 'f') {
+				event.preventDefault();
+				void setFocusMode(!isFocusMode);
+			}
 		};
 
 		window.addEventListener('keydown', handleKeydown);
@@ -197,10 +216,15 @@
 		).toString();
 	}
 
+	function getUploadProgressItemId(file: File, index: number) {
+		return `${index}-${file.name}-${file.lastModified}-${file.size}`;
+	}
+
 	function updateUploadFiles() {
 		const selectedFiles = Array.from(uploadInput?.files ?? []);
 		uploadFiles = selectedFiles.map((file) => file.name);
-		uploadProgressItems = selectedFiles.map((file) => ({
+		uploadProgressItems = selectedFiles.map((file, index) => ({
+			id: getUploadProgressItemId(file, index),
 			fileName: file.name,
 			progress: 0,
 			status: 'pending'
@@ -233,12 +257,12 @@
 	}
 
 	function updateUploadProgressItem(
-		fileName: string,
+		progressItemId: string,
 		progress: number,
 		status: UploadProgressItem['status']
 	) {
 		uploadProgressItems = uploadProgressItems.map((item) =>
-			item.fileName === fileName
+			item.id === progressItemId
 				? {
 						...item,
 						progress,
@@ -276,6 +300,16 @@
 		return 'bg-foreground';
 	}
 
+	function canHandleViewerShortcut(target: EventTarget | null) {
+		return !(
+			target instanceof HTMLElement &&
+			(target.isContentEditable ||
+				target.tagName === 'INPUT' ||
+				target.tagName === 'TEXTAREA' ||
+				target.tagName === 'SELECT')
+		);
+	}
+
 	function setLayout(nextLayout: ViewerLayout) {
 		layout = nextLayout;
 
@@ -284,12 +318,35 @@
 		}
 	}
 
-	function toggleFocusMode() {
-		isFocusMode = !isFocusMode;
+	async function setFocusMode(nextFocusMode: boolean) {
+		if (browser && nextFocusMode) {
+			focusReturnElement =
+				document.activeElement instanceof HTMLElement ? document.activeElement : null;
+		}
+
+		isFocusMode = nextFocusMode;
 
 		if (browser) {
-			window.sessionStorage.setItem(FOCUS_STORAGE_KEY, String(isFocusMode));
+			window.sessionStorage.setItem(FOCUS_STORAGE_KEY, String(nextFocusMode));
+			await tick();
+
+			if (nextFocusMode) {
+				viewerToolbarElement?.focus();
+				return;
+			}
+
+			if (focusReturnElement?.isConnected) {
+				focusReturnElement.focus();
+				return;
+			}
+
+			const focusToggle = document.querySelector<HTMLElement>('[data-focus-mode-toggle="true"]');
+			focusToggle?.focus();
 		}
+	}
+
+	function toggleFocusMode() {
+		void setFocusMode(!isFocusMode);
 	}
 
 	function getPageZoom(pageId: string) {
@@ -315,7 +372,7 @@
 		updatePageZoom(pageId, DEFAULT_PAGE_ZOOM);
 	}
 
-	function uploadFileWithProgress(file: File, upload: PreparedUpload) {
+	function uploadFileWithProgress(file: File, upload: PreparedUpload, progressItemId: string) {
 		return new Promise<void>((resolveUpload, rejectUpload) => {
 			const request = new XMLHttpRequest();
 
@@ -327,36 +384,36 @@
 
 			request.upload.addEventListener('progress', (event) => {
 				if (!event.lengthComputable) {
-					updateUploadProgressItem(file.name, 0, 'uploading');
+					updateUploadProgressItem(progressItemId, 0, 'uploading');
 					return;
 				}
 
 				const progress = Math.min(100, Math.round((event.loaded / event.total) * 100));
-				updateUploadProgressItem(file.name, progress, 'uploading');
+				updateUploadProgressItem(progressItemId, progress, 'uploading');
 			});
 
 			request.addEventListener('load', () => {
 				if (request.status >= 200 && request.status < 300) {
-					updateUploadProgressItem(file.name, 100, 'uploaded');
+					updateUploadProgressItem(progressItemId, 100, 'uploaded');
 					resolveUpload();
 					return;
 				}
 
-				updateUploadProgressItem(file.name, 0, 'failed');
+				updateUploadProgressItem(progressItemId, 0, 'failed');
 				rejectUpload(new Error(`Could not upload ${file.name} to storage.`));
 			});
 
 			request.addEventListener('error', () => {
-				updateUploadProgressItem(file.name, 0, 'failed');
+				updateUploadProgressItem(progressItemId, 0, 'failed');
 				rejectUpload(new Error(`Could not upload ${file.name} to storage.`));
 			});
 
 			request.addEventListener('abort', () => {
-				updateUploadProgressItem(file.name, 0, 'failed');
+				updateUploadProgressItem(progressItemId, 0, 'failed');
 				rejectUpload(new Error(`Could not upload ${file.name} to storage.`));
 			});
 
-			updateUploadProgressItem(file.name, 0, 'uploading');
+			updateUploadProgressItem(progressItemId, 0, 'uploading');
 			request.send(file);
 		});
 	}
@@ -427,14 +484,19 @@
 
 			uploads = prepareBody.uploads ?? [];
 
+			if (uploads.length !== files.length) {
+				throw new Error('Could not confirm an upload plan for every selected file.');
+			}
+
 			for (const [index, upload] of uploads.entries()) {
 				const file = files[index];
+				const progressItem = uploadProgressItems[index];
 
-				if (!file) {
+				if (!file || !progressItem || upload.originalFilename !== file.name) {
 					throw new Error('Could not match the selected files to the upload plan.');
 				}
 
-				await uploadFileWithProgress(file, upload);
+				await uploadFileWithProgress(file, upload, progressItem.id);
 			}
 
 			const finalizeResponse = await fetch(getFinalizeUploadPath(), {
@@ -565,7 +627,11 @@
 
 		<section class="space-y-5">
 			<div
+				bind:this={viewerToolbarElement}
+				aria-label="Song viewer controls"
 				class={`sticky z-20 rounded-3xl border border-border/70 bg-background/95 p-4 backdrop-blur ${isFocusMode ? 'top-0 shadow-lg' : 'top-3'}`}
+				role="region"
+				tabindex="-1"
 			>
 				<div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
 					<div class="space-y-1">
@@ -577,11 +643,15 @@
 						<p class="text-sm text-muted-foreground">
 							Choose a layout and zoom any page without affecting the rest of the song.
 						</p>
+						<p class="text-xs text-muted-foreground">
+							Shortcuts: 1, 2, 3 for layout, F for focus mode, and Escape to leave focus mode.
+						</p>
 					</div>
 
 					<div class="flex flex-col gap-3 lg:items-end">
-						<div class="flex flex-wrap gap-2">
+						<div aria-label="Viewer layout" class="flex flex-wrap gap-2" role="group">
 							<Button
+								aria-pressed={layout === 1}
 								variant={layout === 1 ? 'default' : 'outline'}
 								size="sm"
 								onclick={() => setLayout(1)}
@@ -589,6 +659,7 @@
 								1 column
 							</Button>
 							<Button
+								aria-pressed={layout === 2}
 								variant={layout === 2 ? 'default' : 'outline'}
 								size="sm"
 								onclick={() => setLayout(2)}
@@ -596,6 +667,7 @@
 								2 columns
 							</Button>
 							<Button
+								aria-pressed={layout === 3}
 								variant={layout === 3 ? 'default' : 'outline'}
 								size="sm"
 								onclick={() => setLayout(3)}
@@ -614,6 +686,8 @@
 								</a>
 							{/if}
 							<Button
+								aria-pressed={isFocusMode}
+								data-focus-mode-toggle="true"
 								variant={isFocusMode ? 'default' : 'outline'}
 								size="sm"
 								onclick={toggleFocusMode}
@@ -679,7 +753,7 @@
 					</CardHeader>
 					<CardContent class="space-y-4">
 						{#if feedbackMessage}
-							<p class={`rounded-xl border px-3 py-2 text-sm ${feedbackClass}`}>
+							<p aria-live="polite" class={`rounded-xl border px-3 py-2 text-sm ${feedbackClass}`}>
 								{feedbackMessage}
 							</p>
 						{/if}
@@ -721,7 +795,7 @@
 							{/if}
 
 							{#if uploadProgressItems.length > 0}
-								<div class="rounded-2xl border px-4 py-4">
+								<div aria-live="polite" class="rounded-2xl border px-4 py-4">
 									<div class="flex items-center justify-between gap-3">
 										<p class="text-sm font-medium">Upload progress</p>
 										<p class="text-sm text-muted-foreground">
@@ -731,7 +805,7 @@
 										</p>
 									</div>
 									<div class="mt-4 space-y-3">
-										{#each uploadProgressItems as item (`${item.fileName}-${item.status}-${item.progress}`)}
+										{#each uploadProgressItems as item (item.id)}
 											<div class="space-y-2">
 												<div class="flex items-center justify-between gap-3 text-sm">
 													<p class="truncate font-medium">{item.fileName}</p>

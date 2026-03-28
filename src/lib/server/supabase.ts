@@ -59,22 +59,11 @@ export async function safeGetSession(event: RequestEvent) {
 	}
 
 	const {
-		data: { session }
-	} = await event.locals.supabase.auth.getSession();
-
-	if (!session) {
-		return {
-			session: null,
-			user: null
-		};
-	}
-
-	const {
 		data: { user },
 		error
 	} = await event.locals.supabase.auth.getUser();
 
-	if (error) {
+	if (error || !user) {
 		return {
 			session: null,
 			user: null
@@ -82,7 +71,7 @@ export async function safeGetSession(event: RequestEvent) {
 	}
 
 	return {
-		session,
+		session: null,
 		user
 	};
 }
