@@ -5,7 +5,6 @@
 	import {
 		Card,
 		CardContent,
-		CardFooter,
 		CardDescription,
 		CardHeader,
 		CardTitle
@@ -24,18 +23,10 @@
 	);
 	const feedbackMessage = $derived(form?.message ?? data.message);
 	const feedbackClass = $derived(
-		form?.success
+		form?.success || (!form && data.message)
 			? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
 			: 'border-destructive/30 bg-destructive/5 text-destructive'
 	);
-
-	function getRenameValue(collection: { id: string; name: string }) {
-		if (form?.intent === 'renameCollection' && form?.targetId === collection.id && 'name' in form) {
-			return form.name;
-		}
-
-		return collection.name;
-	}
 
 	function getCollectionDateLabel(timestamp: string) {
 		return new Date(timestamp).toLocaleDateString(undefined, {
@@ -44,54 +35,119 @@
 			year: 'numeric'
 		});
 	}
+
+	function getSongCountLabel(songCount: number) {
+		return `${songCount} song${songCount === 1 ? '' : 's'}`;
+	}
 </script>
 
 <svelte:head>
-	<title>Tune Bit | Library</title>
+	<title>Tune Bit | Collections</title>
 	<meta
 		name="description"
-		content="Manage your private Tune Bit collections and songs inside the protected library."
+		content="Browse collections, create a new collection, and start a new song from the authenticated Tune Bit home."
 	/>
 </svelte:head>
 
-<div class="space-y-8">
-	<section class="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
-		<Card class="border-border/70 bg-card/90">
-			<CardHeader class="space-y-4">
-				<Badge variant="outline" class="w-fit">Phase 4 collections and songs</Badge>
-				<div class="space-y-3">
-					<CardTitle class="max-w-3xl text-4xl leading-tight font-semibold tracking-tight">
-						Build your private note library one collection at a time.
-					</CardTitle>
-					<CardDescription class="max-w-2xl text-base leading-7">
-						Collections are now backed by the authenticated database schema, and each one becomes
-						the home for the songs you will upload and read in later phases.
-					</CardDescription>
-				</div>
+<div class="space-y-6">
+	<section class="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+		<div class="space-y-3">
+			<div class="flex flex-wrap items-center gap-2">
+				<Badge variant="outline">{data.collections.length} collections</Badge>
+				<Badge variant="outline">{totalSongs} songs</Badge>
+			</div>
+			<div class="space-y-2">
+				<h1 class="text-4xl font-semibold tracking-tight">Collections</h1>
+				<p class="max-w-3xl text-base text-muted-foreground">
+					Keep your library easy to scan, jump into a collection quickly, or start a new song from
+					here.
+				</p>
+			</div>
+		</div>
+
+		<div class="flex flex-wrap gap-3">
+			<a class={buttonVariants({ variant: 'outline' })} href={resolve('/app/songs/new')}>
+				Add New Song
+			</a>
+			<a class={buttonVariants({ variant: 'ghost' })} href={resolve('/')}>Public overview</a>
+		</div>
+	</section>
+
+	{#if feedbackMessage}
+		<p class={`rounded-2xl border px-4 py-3 text-sm ${feedbackClass}`}>
+			{feedbackMessage}
+		</p>
+	{/if}
+
+	<section class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+		<Card class="border-border/70">
+			<CardHeader class="space-y-2">
+				<CardTitle>Your collections</CardTitle>
+				<CardDescription>
+					Open any collection to manage songs, settings, and reading workflows.
+				</CardDescription>
 			</CardHeader>
-			<CardContent class="grid gap-4 sm:grid-cols-3">
-				<div class="rounded-2xl border border-dashed px-4 py-4">
-					<p class="text-sm text-muted-foreground">Collections</p>
-					<p class="mt-2 font-medium">{data.collections.length}</p>
-				</div>
-				<div class="rounded-2xl border border-dashed px-4 py-4">
-					<p class="text-sm text-muted-foreground">Songs</p>
-					<p class="mt-2 font-medium">{totalSongs}</p>
-				</div>
-				<div class="rounded-2xl border border-dashed px-4 py-4">
-					<p class="text-sm text-muted-foreground">Signed in as</p>
-					<p class="mt-2 font-medium break-all">{data.user.email}</p>
-				</div>
+			<CardContent class="space-y-3">
+				{#if data.collections.length === 0}
+					<div class="rounded-3xl border border-dashed px-6 py-12 text-center">
+						<p class="text-lg font-medium">No collections yet</p>
+						<p class="mx-auto mt-2 max-w-xl text-sm leading-6 text-muted-foreground">
+							Create your first collection or go straight to Add New Song. Tune Bit can create a
+							default first collection during song setup when you do not have one yet.
+						</p>
+						<div class="mt-5 flex flex-wrap justify-center gap-3">
+							<a class={buttonVariants({ variant: 'outline' })} href={resolve('/app/songs/new')}>
+								Add New Song
+							</a>
+						</div>
+					</div>
+				{:else}
+					<div class="divide-y divide-border rounded-3xl border">
+						{#each data.collections as collection (collection.id)}
+							<div
+								class="group relative flex flex-col gap-4 px-5 py-4 transition-colors hover:bg-muted/40 lg:flex-row lg:items-center lg:justify-between"
+							>
+								<a
+									class="absolute inset-0 rounded-3xl"
+									aria-label={`Open ${collection.name}`}
+									href={resolve('/app/collections/[collectionId]', {
+										collectionId: collection.id
+									})}
+								>
+								</a>
+								<div class="relative z-10 min-w-0 space-y-1">
+									<p
+										class="truncate text-lg font-medium tracking-tight transition-colors group-hover:text-primary"
+									>
+										{collection.name}
+									</p>
+									<p class="text-sm text-muted-foreground">
+										Updated {getCollectionDateLabel(collection.updated_at)}
+									</p>
+								</div>
+
+								<div class="relative z-10 flex flex-wrap items-center gap-3">
+									<Badge variant="outline">{getSongCountLabel(collection.songCount)}</Badge>
+									<form method="GET" action={resolve('/app/songs/new')}>
+										<input type="hidden" name="collectionId" value={collection.id} />
+										<Button class="cursor-pointer" type="submit" variant="outline" size="sm">
+											Add song
+										</Button>
+									</form>
+								</div>
+							</div>
+						{/each}
+					</div>
+				{/if}
 			</CardContent>
 		</Card>
 
 		<Card class="border-border/70">
-			<CardHeader>
-				<Badge variant="outline" class="w-fit">Create collection</Badge>
-				<CardTitle>Start a new collection</CardTitle>
+			<CardHeader class="space-y-2">
+				<CardTitle>Add Collection</CardTitle>
 				<CardDescription>
-					Use collections to separate sets like rehearsal books, lessons, or service music before
-					adding songs inside them.
+					Create a home for rehearsal books, lesson notes, service music, or any other set you want
+					to group together.
 				</CardDescription>
 			</CardHeader>
 			<CardContent class="space-y-4">
@@ -109,101 +165,15 @@
 					</div>
 					<Button class="w-full" type="submit">Create collection</Button>
 				</form>
+
 				<div class="rounded-2xl border px-4 py-4 text-sm text-muted-foreground">
-					<p class="font-medium text-foreground">What this unlocks</p>
-					<p class="mt-2">
-						Each collection gets its own song list, management actions, and future upload entry
-						point.
+					<p class="font-medium text-foreground">Fast path</p>
+					<p class="mt-2 leading-6">
+						Need to start reading right away? Use Add New Song to create a song first and let Tune
+						Bit choose the right collection automatically.
 					</p>
 				</div>
 			</CardContent>
 		</Card>
-	</section>
-
-	<section>
-		<Card class="border-border/70">
-			<CardHeader>
-				<CardTitle>Your collections</CardTitle>
-				<CardDescription>
-					Rename, delete, and open collections to manage the songs they contain.
-				</CardDescription>
-			</CardHeader>
-			<CardContent class="space-y-4">
-				{#if feedbackMessage}
-					<p class={`rounded-xl border px-3 py-2 text-sm ${feedbackClass}`}>
-						{feedbackMessage}
-					</p>
-				{/if}
-
-				{#if data.collections.length === 0}
-					<div class="rounded-2xl border border-dashed px-4 py-8 text-center">
-						<p class="text-base font-medium">No collections yet</p>
-						<p class="mt-2 text-sm text-muted-foreground">
-							Create your first collection to start organizing songs for future uploads and reading.
-						</p>
-					</div>
-				{:else}
-					<div class="grid gap-4 xl:grid-cols-2">
-						{#each data.collections as collection (collection.id)}
-							<Card class="border-border/70 bg-background/80">
-								<CardHeader class="space-y-3">
-									<div class="flex flex-wrap items-start justify-between gap-3">
-										<div class="space-y-1">
-											<CardTitle>{collection.name}</CardTitle>
-											<CardDescription>
-												Updated {getCollectionDateLabel(collection.updated_at)}
-											</CardDescription>
-										</div>
-										<Badge variant="outline">{collection.songCount} songs</Badge>
-									</div>
-								</CardHeader>
-								<CardContent class="space-y-4">
-									<form method="POST" action="?/renameCollection" class="space-y-3">
-										<input type="hidden" name="collectionId" value={collection.id} />
-										<div class="space-y-2">
-											<label class="text-sm font-medium" for={`rename-${collection.id}`}>
-												Collection name
-											</label>
-											<Input
-												id={`rename-${collection.id}`}
-												name="name"
-												maxlength={200}
-												required
-												value={getRenameValue(collection)}
-											/>
-										</div>
-										<Button type="submit" variant="outline">Save name</Button>
-									</form>
-								</CardContent>
-								<CardFooter
-									class="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between"
-								>
-									<a
-										class={buttonVariants({ variant: 'ghost' })}
-										href={resolve('/app/collections/[collectionId]', {
-											collectionId: collection.id
-										})}
-									>
-										Open collection
-									</a>
-									<form method="POST" action="?/deleteCollection">
-										<input type="hidden" name="collectionId" value={collection.id} />
-										<input type="hidden" name="collectionName" value={collection.name} />
-										<Button type="submit" variant="destructive">Delete</Button>
-									</form>
-								</CardFooter>
-							</Card>
-						{/each}
-					</div>
-				{/if}
-			</CardContent>
-		</Card>
-	</section>
-
-	<section class="flex flex-wrap items-center gap-3">
-		<a class={buttonVariants({})} href={resolve('/')}> Review product overview </a>
-		<a class={buttonVariants({ variant: 'outline' })} href={resolve('/')}>
-			Back to the public home page
-		</a>
 	</section>
 </div>

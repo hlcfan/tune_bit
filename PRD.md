@@ -33,14 +33,19 @@ Build a personal note library that lets a signed-in user:
 - As a new user, I can sign up with email and password.
 - As a returning user, I can sign in with email and password.
 - As a signed-in user, I can only access my own collections, songs, and note files.
+- As a signed-in user, I can open a compact avatar menu from the bottom-left corner to log out or return to collections.
 
 ### Collections and Songs
 
 - As a user, I can create a collection such as “Jazz Standards” or “Sunday Service”.
 - As a user, I can create songs within a collection.
+- As a user, I can create a new song from the home page and choose which collection it belongs to.
+- As a user, I can create a new song from a collection page with that collection already selected.
+- As a user with no collections yet, I can still create a song by selecting a placeholder default collection option that becomes a real collection when I submit.
 - As a user, I can upload multiple files at once into a song.
 - As a user, I can upload multiple note pages to a song.
 - As a user, I can see all songs inside a collection.
+- As a user, I can see all of my collections on the home page with direct actions to add a collection or add a new song.
 
 ### File Upload and Organization
 
@@ -49,6 +54,7 @@ Build a personal note library that lets a signed-in user:
 - As a user, I can upload PDF files for note pages.
 - As a user, I can store multiple pages under one song.
 - As a user, I can view song pages in the correct order.
+- As a user, I can upload notes from the song page in a modal without leaving the current song.
 
 ### Viewing Experience
 
@@ -66,22 +72,42 @@ Build a personal note library that lets a signed-in user:
 - Passwords must be securely handled by Supabase Auth.
 - Unauthenticated users cannot access app content pages.
 
-### 6.2 Collections
+### 6.2 App Shell and Navigation
+
+- The authenticated app shell should not use a top navigation bar.
+- The main content area should use the full available page width by default.
+- A sticky user avatar trigger should appear at the bottom-left corner on authenticated app screens.
+- Clicking the avatar opens a menu with exactly two items: Collections and Log out.
+- The Collections menu item navigates to the collections index page.
+- The Log out menu item signs the user out immediately.
+
+### 6.3 Collections
 
 - Users can create, rename, and delete collections.
 - Each collection belongs to one user.
+- The home page serves as the collections index for signed-in users.
+- The home page shows all collections for the current user.
+- The home page includes an add collection action.
+- The home page includes an add new song action.
 - Collection list view shows collection name and song count.
-- Collection detail includes a quick upload entry point.
-- Collection-level upload opens a modal with a song name input at the top and a drag-and-drop multi-file upload area.
 
-### 6.3 Songs
+### 6.4 Songs
 
 - Users can create, rename, and delete songs within a collection.
 - Each song belongs to one collection and one user.
 - Songs contain one or more note pages.
-- Song detail supports direct uploads into the current song.
+- There is a dedicated add new song page with a collection selector.
+- When add new song is opened from the home page, the collection selector defaults to the user's most recently updated collection.
+- When add new song is opened from a collection page, that collection is preselected in the collection selector.
+- If the user has no collections, the add new song page still shows a placeholder default collection option in the dropdown.
+- If the user submits the add new song form with the placeholder default collection selected, the system creates the actual collection before creating the song.
+- A collection page shows the songs under that collection.
+- A collection page includes an add new song action that opens the add new song page.
+- A song page lists all notes that belong to the current song.
+- A song page keeps the note list and viewer on the same screen.
+- A song page includes an upload action for adding notes to the current song.
 
-### 6.4 Notes
+### 6.5 Notes
 
 - Accepted file formats: PDF, JPG, JPEG, PNG, WEBP.
 - Users can upload multiple files in a single action.
@@ -89,8 +115,10 @@ Build a personal note library that lets a signed-in user:
 - For PDFs, the system stores the original file and renders the uploaded PDF on demand in the browser.
 - For images, each uploaded image is treated as a single note page.
 - Each page has an order index within a song.
+- Uploading notes to an existing song is initiated from a modal on the song page.
+- The upload modal supports drag-and-drop and manual file browsing.
 
-### 6.5 Viewer
+### 6.6 Viewer
 
 - Viewer supports normal mode and focus mode.
 - Viewer supports one, two, or three-column layout.
@@ -141,6 +169,8 @@ The interface should follow a 37signals-inspired style:
 - Keep the library easy to scan.
 - Make reading notes the primary experience.
 - Make focus mode feel distraction-free without hiding essential controls.
+- Remove non-essential chrome so content uses as much horizontal space as possible.
+- Keep global navigation minimal and anchored to the bottom-left avatar menu.
 
 ## 9. Proposed Information Architecture
 
@@ -148,29 +178,43 @@ The interface should follow a 37signals-inspired style:
   - Sign up
   - Sign in
 - App
-  - Collections list
+  - Collections list / home
   - Collection detail
+  - Add new song
   - Song detail / viewer
 
 ### Main Screens
 
-#### Collections List
+#### Collections List / Home
 
 - collection cards or rows
 - create collection action
-- account menu
+- add new song action
+- sticky bottom-left avatar menu
 
 #### Collection Detail
 
 - collection title
 - song list
-- create song action
-- collection-level quick upload action
-- upload modal with song name input and drag-and-drop multi-file upload
+- add new song action
+- sticky bottom-left avatar menu
+
+#### Add New Song
+
+- song title input
+- collection dropdown
+- default selection uses the current collection when launched from a collection page
+- default selection uses the most recently updated collection when launched from the home page
+- when the user has no collections, the dropdown shows a placeholder default collection option that is converted into a real collection on submit
+- primary create action
 
 #### Song Viewer
 
 - song title
+- note list
+- note list and viewer share the same screen
+- upload notes action
+- upload modal with drag-and-drop and manual file browse
 - layout selector: 1 / 2 / 3 columns
 - zoom controls
 - normal / focus mode toggle
@@ -244,8 +288,10 @@ Managed by Supabase Auth.
 Included in MVP:
 
 - email/password auth
+- simplified full-width app shell with bottom-left avatar menu
 - collection CRUD
 - song CRUD
+- dedicated add new song page with collection preselection
 - multi-file uploads
 - image and PDF uploads
 - multi-page song grouping
@@ -273,7 +319,16 @@ Not included in MVP:
 ## 14. Product Decisions
 
 - PDFs are rendered on demand in the browser, using the uploaded file directly instead of pre-generating page images by default.
-- Uploads are available from both the song screen and collection-level quick actions.
-- Collection-level upload uses a modal with a song name input at the top and drag-and-drop multi-file upload.
+- The authenticated app shell does not use a top navigation bar.
+- Authenticated page content uses the full available width by default.
+- The only global navigation entry point is a sticky bottom-left avatar menu.
+- The avatar menu contains exactly Collections and Log out.
+- The collections index is the signed-in home page.
+- New songs are created from a dedicated add new song page instead of an inline collection upload flow.
+- When launched from the home page, add new song defaults to the user's most recently updated collection.
+- When launched from a collection page, add new song preselects the current collection.
+- If the user has no collections, add new song offers a placeholder default collection option and creates the actual collection on submit.
+- The song page keeps the note list and viewer together on the same screen.
+- Uploads to an existing song are initiated from the song page in a modal with drag-and-drop and manual file browse.
 - Uploads use server-generated signed R2 upload URLs, browser-to-R2 transfer, and a protected callback to persist metadata after upload.
 - Page zoom is independent per page instance by default.

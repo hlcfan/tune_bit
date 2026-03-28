@@ -14,6 +14,7 @@
 - [x] Collections and songs
 - [x] Upload pipeline and storage
 - [x] Note viewer
+- [x] Simplified authenticated UI
 - [~] Hardening and QA
 
 ## Milestone Checklist
@@ -86,6 +87,18 @@
 - [x] Validate keyboard accessibility
 - [x] Review viewer performance for larger PDFs
 
+### 8. Simplified Authenticated UI
+
+- [x] Remove the authenticated top navigation bar
+- [x] Make authenticated layouts full width
+- [x] Add a sticky avatar menu with Collections and Log out
+- [x] Make the signed-in home route the collections index
+- [x] Add a dedicated Add New Song page with collection preselection
+- [x] Support first-run song creation with a default collection fallback
+- [x] Simplify collection pages around the song list
+- [x] Keep the song note list and viewer on one screen
+- [x] Move song uploads into a song-page modal
+
 ## Implementation Notes
 
 ### Architecture Guardrails
@@ -99,7 +112,7 @@
 ### UX Guardrails
 
 - Keep the UI calm and content-first.
-- Make uploads available from both collection and song contexts.
+- Keep uploads attached to the song screen so users stay in reading context.
 - Keep note viewing faster and more prominent than management actions.
 - Keep viewer controls obvious without making the interface heavy.
 
@@ -139,7 +152,11 @@
 - Improved viewer keyboard accessibility with focus restoration, layout and focus shortcuts, clearer live regions, and more descriptive per-page zoom controls.
 - Improved larger-PDF delivery by adding byte-range and HEAD support on protected file routes while keeping progressive page rendering in place.
 - Verified the phase 7 hardening slice with typecheck, lint, and production build commands.
+- Reworked the authenticated shell into a full-width layout with a persistent bottom-left avatar menu for Collections and Log out.
+- Turned the signed-in home route into a cleaner collections index and added a dedicated Add New Song page with collection preselection plus a first-run default collection fallback.
+- Simplified collection detail screens around the song list and moved note uploads into a song-page modal while keeping the note list and viewer on the same screen.
+- Verified the simplified UI slice with typecheck, lint, production build, and a live local preview.
 
 ### Next Recommended Slice
 
-- Finish phase 7 by validating row-level security behavior and verifying page ordering against real multi-file uploads.
+- Finish phase 7 by validating row-level security behavior, verifying page ordering against real multi-file uploads, and smoke-testing the new simplified collection and song flows with authenticated data.
