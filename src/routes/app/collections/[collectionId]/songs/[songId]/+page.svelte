@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { enhance } from '$app/forms';
 	import { browser } from '$app/environment';
 	import { invalidateAll } from '$app/navigation';
 	import { resolve } from '$app/paths';
@@ -7,6 +8,7 @@
 	import { Badge } from '$lib/components/ui/badge/index.js';
 	import { Button, buttonVariants } from '$lib/components/ui/button/index.js';
 	import { Card, CardContent } from '$lib/components/ui/card/index.js';
+	import type { SubmitFunction } from '@sveltejs/kit';
 	import { onMount, tick } from 'svelte';
 
 	type PreparedUpload = {
@@ -312,6 +314,15 @@
 	function closeDeleteNoteDialog() {
 		deleteNoteDialog?.close();
 	}
+
+	const enhanceDeleteNoteForm: SubmitFunction = () => {
+		return async ({ result, update }) => {
+			await update({
+				reset: false,
+				invalidateAll: result.type === 'success'
+			});
+		};
+	};
 
 	function handleDragEnter(event: DragEvent) {
 		event.preventDefault();
@@ -914,7 +925,12 @@
 					</p>
 				</div>
 
-				<form method="POST" action="?/deleteNoteFile" class="space-y-4">
+				<form
+					method="POST"
+					action="?/deleteNoteFile"
+					use:enhance={enhanceDeleteNoteForm}
+					class="space-y-4"
+				>
 					<input type="hidden" name="noteFileId" value={activeDeleteNoteFileId} />
 					<input type="hidden" name="noteFileName" value={activeNoteFileName} />
 					<div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">

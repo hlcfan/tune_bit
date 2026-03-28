@@ -155,6 +155,7 @@
 - Reworked the authenticated shell into a full-width layout with a persistent bottom-left avatar menu for Collections and Log out.
 - Turned the signed-in home route into a cleaner collections index and added a dedicated Add New Song page with collection preselection plus a first-run default collection fallback.
 - Simplified collection detail screens around the song list and moved note uploads into a song-page modal while keeping the note list and viewer on the same screen.
+- Enhanced song-page note deletion so modal submissions stay in place without leaving the route on a named action URL.
 - Verified the simplified UI slice with typecheck, lint, production build, and a live local preview.
 
 ### Next Recommended Slice
