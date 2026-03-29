@@ -167,6 +167,7 @@
 - Added left-arrow and right-arrow shortcuts in song focus mode so readers can move to the previous or next song in the same collection without leaving the full-screen viewer.
 - Updated protected note-file responses to use long-lived private browser caching with cookie variance, and cleared cached note assets on sign-out so repeat viewing avoids unnecessary R2 fetches without leaking across sessions.
 - Extended left-arrow and right-arrow song switching to the standard song page while suppressing it when upload or delete dialogs are open.
+- Updated the Add a Song screen to use a two-column layout with song details on the left and a drag-and-drop upload area on the right, and enabled optional file uploads during song creation.
 - Added optional PDF page selection during song uploads so users can upload all pages, explicit page lists, or page ranges from a single PDF.
 - Changed the empty song page so the inline drag-and-drop upload area appears immediately instead of requiring an Upload Notes button and modal first.
 - Added dismissible flash notifications with automatic fade-out across collection, song, and add-song screens plus the focus-mode viewer.
