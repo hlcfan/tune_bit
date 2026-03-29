@@ -155,6 +155,7 @@
 	);
 	const deleteNoteFileMessage = $derived(form?.intent === 'deleteNoteFile' ? form.message : null);
 	const totalPages = $derived(notePages.length);
+	const hasViewerPages = $derived(viewerPages.length > 0);
 	const viewerGridClass = $derived(
 		layout === 1
 			? 'grid-cols-1'
@@ -1047,6 +1048,125 @@
 	/>
 </svelte:head>
 
+{#snippet uploadFormFields()}
+	<div class="space-y-2">
+		<div
+			class={`relative rounded-2xl border border-dashed px-5 py-10 text-center transition-colors ${isDragActive ? 'border-primary bg-primary/5' : 'border-border'}`}
+			ondragenter={handleDragEnter}
+			ondragover={handleDragOver}
+			ondragleave={handleDragLeave}
+			ondrop={handleDrop}
+			role="button"
+			tabindex="0"
+		>
+			<input
+				bind:this={uploadInput}
+				id="song-upload-files"
+				type="file"
+				name="files"
+				accept=".pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/jpeg,image/png,image/webp"
+				multiple
+				class="absolute inset-0 cursor-pointer opacity-0"
+				onchange={updateUploadFiles}
+			/>
+			<div class="space-y-2">
+				<p class="font-medium">Drop files here or click to browse</p>
+				<p class="text-sm text-muted-foreground">
+					Supports PDF, JPG, JPEG, PNG, and WEBP with direct browser uploads to secure private
+					storage.
+				</p>
+			</div>
+		</div>
+	</div>
+
+	{#if selectedUploadEntries.length > 0}
+		<div class="space-y-4 rounded-2xl border px-4 py-4">
+			<p class="text-sm font-medium">Ready to upload</p>
+			<div class="space-y-3">
+				{#each selectedUploadEntries as { file, progressItemId } (progressItemId)}
+					<div class="rounded-2xl border border-border/70 px-4 py-4">
+						<div class="flex flex-wrap items-start justify-between gap-3">
+							<div class="min-w-0 space-y-2">
+								<p class="font-medium break-all">{file.name}</p>
+								<div class="flex flex-wrap items-center gap-2">
+									<Badge variant="outline">
+										{isPdfFile(file) ? 'PDF' : 'Image'}
+									</Badge>
+									{#if isPdfFile(file) && typeof pdfPageCountById[progressItemId] === 'number'}
+										<span class="text-sm text-muted-foreground">
+											{pdfPageCountById[progressItemId]} total pages
+										</span>
+									{/if}
+								</div>
+							</div>
+						</div>
+
+						{#if isPdfFile(file)}
+							<div class="mt-4 space-y-2">
+								<label class="text-sm font-medium" for={`page-selection-${progressItemId}`}>
+									Pages to include
+								</label>
+								<Input
+									id={`page-selection-${progressItemId}`}
+									maxlength={120}
+									placeholder="All pages, 5-10, or 2,3,4"
+									value={getUploadPageSelection(progressItemId)}
+									disabled={isUploading}
+									oninput={(event) =>
+										updateUploadPageSelection(
+											progressItemId,
+											(event.currentTarget as HTMLInputElement).value
+										)}
+								/>
+								<p
+									class={`text-sm ${getUploadPageSelectionError(file, progressItemId) ? 'text-destructive' : 'text-muted-foreground'}`}
+								>
+									{getUploadPageSelectionMessage(file, progressItemId)}
+								</p>
+							</div>
+						{:else}
+							<p class="mt-4 text-sm text-muted-foreground">
+								{getUploadPageSelectionMessage(file, progressItemId)}
+							</p>
+						{/if}
+					</div>
+				{/each}
+			</div>
+		</div>
+	{/if}
+
+	{#if uploadProgressItems.length > 0}
+		<div aria-live="polite" class="rounded-2xl border px-4 py-4">
+			<div class="flex items-center justify-between gap-3">
+				<p class="text-sm font-medium">Upload progress</p>
+				<p class="text-sm text-muted-foreground">
+					{uploadProgressItems.filter((item) => item.status === 'uploaded').length}/
+					{uploadProgressItems.length}
+					uploaded
+				</p>
+			</div>
+			<div class="mt-4 space-y-3">
+				{#each uploadProgressItems as item (item.id)}
+					<div class="space-y-2">
+						<div class="flex items-center justify-between gap-3 text-sm">
+							<p class="truncate font-medium">{item.fileName}</p>
+							<span class="shrink-0 text-muted-foreground">
+								{getProgressStatusLabel(item.status)} · {item.progress}%
+							</span>
+						</div>
+						<div class="h-2 overflow-hidden rounded-full bg-muted">
+							<div
+								class={`h-full transition-all ${getProgressBarClass(item.status)}`}
+								style={`width: ${item.progress}%`}
+							></div>
+						</div>
+					</div>
+				{/each}
+			</div>
+		</div>
+	{/if}
+{/snippet}
+
 <div>
 	<div class="space-y-6">
 		{#if !isFocusMode}
@@ -1074,7 +1194,9 @@
 				</div>
 
 				<div class="flex flex-wrap items-center gap-2">
-					<Button onclick={openUploadModal}>Upload Notes</Button>
+					{#if hasViewerPages}
+						<Button onclick={openUploadModal}>Upload Notes</Button>
+					{/if}
 					<div aria-label="Viewer layout" class="flex flex-wrap gap-2" role="group">
 						<Button
 							aria-pressed={layout === 1}
@@ -1149,20 +1271,27 @@
 						{feedbackMessage}
 					</p>
 				{/if}
-				{#if viewerPages.length === 0}
+				{#if !hasViewerPages}
 					<Card class="border-border/70">
-						<CardContent class="py-14">
-							<div class="mx-auto max-w-xl space-y-3 text-center">
-								<p class="text-2xl font-semibold tracking-tight">
-									Upload the first note file to start reading.
-								</p>
-								<p class="text-sm leading-6 text-muted-foreground">
-									Tune Bit renders PDFs in the browser on demand and keeps uploaded image files in
-									page order with the same viewer controls.
-								</p>
-								<div class="pt-2">
-									<Button onclick={openUploadModal}>Upload Notes</Button>
+						<CardContent class="py-10">
+							<div class="mx-auto max-w-2xl space-y-6">
+								<div class="space-y-3 text-center">
+									<p class="text-2xl font-semibold tracking-tight">
+										Upload the first note file to start reading.
+									</p>
 								</div>
+								<form class="space-y-5" onsubmit={handleUploadSubmit}>
+									{@render uploadFormFields()}
+									<div class="flex flex-wrap items-center justify-end gap-3">
+										<Button type="submit" disabled={isUploadSubmitDisabled}>
+											{isUploading
+												? 'Uploading files…'
+												: hasPendingPdfPageCounts
+													? 'Reading PDFs…'
+													: 'Upload files'}
+										</Button>
+									</div>
+								</form>
 							</div>
 						</CardContent>
 					</Card>
@@ -1191,7 +1320,7 @@
 			</section>
 		{/if}
 
-		{#if !isFocusMode}
+		{#if !isFocusMode && hasViewerPages}
 			<dialog
 				bind:this={uploadDialog}
 				class="m-auto w-full max-w-2xl rounded-3xl border bg-background p-0 text-foreground shadow-2xl backdrop:bg-background/70"
@@ -1217,126 +1346,7 @@
 					{/if}
 
 					<form class="space-y-5" onsubmit={handleUploadSubmit}>
-						<div class="space-y-2">
-							<label class="text-sm font-medium" for="song-upload-files">Files</label>
-							<div
-								class={`relative rounded-2xl border border-dashed px-5 py-10 text-center transition-colors ${isDragActive ? 'border-primary bg-primary/5' : 'border-border'}`}
-								ondragenter={handleDragEnter}
-								ondragover={handleDragOver}
-								ondragleave={handleDragLeave}
-								ondrop={handleDrop}
-								role="button"
-								tabindex="0"
-							>
-								<input
-									bind:this={uploadInput}
-									id="song-upload-files"
-									type="file"
-									name="files"
-									accept=".pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/jpeg,image/png,image/webp"
-									multiple
-									class="absolute inset-0 cursor-pointer opacity-0"
-									onchange={updateUploadFiles}
-								/>
-								<div class="space-y-2">
-									<p class="font-medium">Drop files here or click to browse</p>
-									<p class="text-sm text-muted-foreground">
-										Supports PDF, JPG, JPEG, PNG, and WEBP with direct browser uploads to secure
-										private storage.
-									</p>
-								</div>
-							</div>
-						</div>
-
-						{#if selectedUploadEntries.length > 0}
-							<div class="space-y-4 rounded-2xl border px-4 py-4">
-								<p class="text-sm font-medium">Ready to upload</p>
-								<div class="space-y-3">
-									{#each selectedUploadEntries as { file, progressItemId } (progressItemId)}
-										<div class="rounded-2xl border border-border/70 px-4 py-4">
-											<div class="flex flex-wrap items-start justify-between gap-3">
-												<div class="min-w-0 space-y-2">
-													<p class="font-medium break-all">{file.name}</p>
-													<div class="flex flex-wrap items-center gap-2">
-														<Badge variant="outline">
-															{isPdfFile(file) ? 'PDF' : 'Image'}
-														</Badge>
-														{#if isPdfFile(file) && typeof pdfPageCountById[progressItemId] === 'number'}
-															<span class="text-sm text-muted-foreground">
-																{pdfPageCountById[progressItemId]} total pages
-															</span>
-														{/if}
-													</div>
-												</div>
-											</div>
-
-											{#if isPdfFile(file)}
-												<div class="mt-4 space-y-2">
-													<label
-														class="text-sm font-medium"
-														for={`page-selection-${progressItemId}`}
-													>
-														Pages to include
-													</label>
-													<Input
-														id={`page-selection-${progressItemId}`}
-														maxlength={120}
-														placeholder="All pages, 5-10, or 2,3,4"
-														value={getUploadPageSelection(progressItemId)}
-														disabled={isUploading}
-														oninput={(event) =>
-															updateUploadPageSelection(
-																progressItemId,
-																(event.currentTarget as HTMLInputElement).value
-															)}
-													/>
-													<p
-														class={`text-sm ${getUploadPageSelectionError(file, progressItemId) ? 'text-destructive' : 'text-muted-foreground'}`}
-													>
-														{getUploadPageSelectionMessage(file, progressItemId)}
-													</p>
-												</div>
-											{:else}
-												<p class="mt-4 text-sm text-muted-foreground">
-													{getUploadPageSelectionMessage(file, progressItemId)}
-												</p>
-											{/if}
-										</div>
-									{/each}
-								</div>
-							</div>
-						{/if}
-
-						{#if uploadProgressItems.length > 0}
-							<div aria-live="polite" class="rounded-2xl border px-4 py-4">
-								<div class="flex items-center justify-between gap-3">
-									<p class="text-sm font-medium">Upload progress</p>
-									<p class="text-sm text-muted-foreground">
-										{uploadProgressItems.filter((item) => item.status === 'uploaded').length}/
-										{uploadProgressItems.length}
-										uploaded
-									</p>
-								</div>
-								<div class="mt-4 space-y-3">
-									{#each uploadProgressItems as item (item.id)}
-										<div class="space-y-2">
-											<div class="flex items-center justify-between gap-3 text-sm">
-												<p class="truncate font-medium">{item.fileName}</p>
-												<span class="shrink-0 text-muted-foreground">
-													{getProgressStatusLabel(item.status)} · {item.progress}%
-												</span>
-											</div>
-											<div class="h-2 overflow-hidden rounded-full bg-muted">
-												<div
-													class={`h-full transition-all ${getProgressBarClass(item.status)}`}
-													style={`width: ${item.progress}%`}
-												></div>
-											</div>
-										</div>
-									{/each}
-								</div>
-							</div>
-						{/if}
+						{@render uploadFormFields()}
 
 						<div class="flex flex-wrap items-center justify-end gap-3">
 							<Button type="button" variant="outline" onclick={closeUploadModal}>Cancel</Button>

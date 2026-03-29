@@ -168,6 +168,7 @@
 - Updated protected note-file responses to use long-lived private browser caching with cookie variance, and cleared cached note assets on sign-out so repeat viewing avoids unnecessary R2 fetches without leaking across sessions.
 - Extended left-arrow and right-arrow song switching to the standard song page while suppressing it when upload or delete dialogs are open.
 - Added optional PDF page selection during song uploads so users can upload all pages, explicit page lists, or page ranges from a single PDF.
+- Changed the empty song page so the inline drag-and-drop upload area appears immediately instead of requiring an Upload Notes button and modal first.
 
 ### Next Recommended Slice
 
