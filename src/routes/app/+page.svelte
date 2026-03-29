@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
+	import FeedbackFlash from '$lib/components/feedback-flash.svelte';
 	import { Badge } from '$lib/components/ui/badge/index.js';
 	import { Button, buttonVariants } from '$lib/components/ui/button/index.js';
 	import {
@@ -74,9 +75,7 @@
 	</section>
 
 	{#if feedbackMessage}
-		<p class={`rounded-2xl border px-4 py-3 text-sm ${feedbackClass}`}>
-			{feedbackMessage}
-		</p>
+		<FeedbackFlash message={feedbackMessage} class={feedbackClass} />
 	{/if}
 
 	<section class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">

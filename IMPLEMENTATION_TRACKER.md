@@ -169,6 +169,7 @@
 - Extended left-arrow and right-arrow song switching to the standard song page while suppressing it when upload or delete dialogs are open.
 - Added optional PDF page selection during song uploads so users can upload all pages, explicit page lists, or page ranges from a single PDF.
 - Changed the empty song page so the inline drag-and-drop upload area appears immediately instead of requiring an Upload Notes button and modal first.
+- Added dismissible flash notifications with automatic fade-out across collection, song, and add-song screens plus the focus-mode viewer.
 
 ### Next Recommended Slice
 

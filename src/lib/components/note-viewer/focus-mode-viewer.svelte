@@ -1,4 +1,5 @@
 <script lang="ts">
+	import FeedbackFlash from '$lib/components/feedback-flash.svelte';
 	import SongNotePage from '$lib/components/note-viewer/song-note-page.svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
 
@@ -111,9 +112,7 @@
 			</div>
 
 			{#if feedbackMessage}
-				<p aria-live="polite" class={`mb-4 rounded-2xl border px-4 py-3 text-sm ${feedbackClass}`}>
-					{feedbackMessage}
-				</p>
+				<FeedbackFlash message={feedbackMessage} class={`mb-4 ${feedbackClass}`} />
 			{/if}
 
 			{#if viewerPages.length === 0}

@@ -4,6 +4,7 @@
 	import { goto, invalidateAll } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
+	import FeedbackFlash from '$lib/components/feedback-flash.svelte';
 	import FocusModeViewer from '$lib/components/note-viewer/focus-mode-viewer.svelte';
 	import SongNotePage from '$lib/components/note-viewer/song-note-page.svelte';
 	import { Badge } from '$lib/components/ui/badge/index.js';
@@ -1267,9 +1268,7 @@
 				tabindex="-1"
 			>
 				{#if feedbackMessage}
-					<p aria-live="polite" class={`rounded-2xl border px-4 py-3 text-sm ${feedbackClass}`}>
-						{feedbackMessage}
-					</p>
+					<FeedbackFlash message={feedbackMessage} class={feedbackClass} />
 				{/if}
 				{#if !hasViewerPages}
 					<Card class="border-border/70">
@@ -1340,9 +1339,7 @@
 					</div>
 
 					{#if feedbackMessage}
-						<p class={`rounded-2xl border px-4 py-3 text-sm ${feedbackClass}`}>
-							{feedbackMessage}
-						</p>
+						<FeedbackFlash message={feedbackMessage} class={feedbackClass} />
 					{/if}
 
 					<form class="space-y-5" onsubmit={handleUploadSubmit}>

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
+	import FeedbackFlash from '$lib/components/feedback-flash.svelte';
 	import { Badge } from '$lib/components/ui/badge/index.js';
 	import { Button, buttonVariants } from '$lib/components/ui/button/index.js';
 	import {
@@ -78,9 +79,7 @@
 			</CardHeader>
 			<CardContent class="space-y-4">
 				{#if feedbackMessage}
-					<p class={`rounded-2xl border px-4 py-3 text-sm ${feedbackClass}`}>
-						{feedbackMessage}
-					</p>
+					<FeedbackFlash message={feedbackMessage} class={feedbackClass} />
 				{/if}
 
 				<form method="POST" action="?/createSong" class="space-y-5">
