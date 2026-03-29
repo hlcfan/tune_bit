@@ -162,6 +162,7 @@
 - Split focus mode into a dedicated full-screen viewer with explicit one-, two-, and three-column layouts plus floating per-page resize controls that no longer add extra chrome or padding around each note.
 - Centered the song-page upload modal so it opens consistently in the middle of the viewport like the delete-note dialog.
 - Stopped the song viewer from recalculating page viewport height on window scroll so scrolling no longer resizes note images or PDF pages unexpectedly.
+- Simplified the floating signed-in menu into an avatar-only trigger, anchored its popup above the avatar, and hid it while the song viewer is in focus mode.
 
 ### Next Recommended Slice
 

@@ -166,6 +166,26 @@
 	});
 
 	$effect(() => {
+		if (!browser) {
+			return;
+		}
+
+		window.dispatchEvent(
+			new CustomEvent('tunebit:song-focus-mode-change', {
+				detail: isFocusMode
+			})
+		);
+
+		return () => {
+			window.dispatchEvent(
+				new CustomEvent('tunebit:song-focus-mode-change', {
+					detail: false
+				})
+			);
+		};
+	});
+
+	$effect(() => {
 		const nextPageZoomById = Object.fromEntries(
 			notePages.map((notePage) => [notePage.id, pageZoomById[notePage.id] ?? DEFAULT_PAGE_ZOOM])
 		);
