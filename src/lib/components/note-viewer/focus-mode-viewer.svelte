@@ -60,18 +60,17 @@
 			class="relative min-w-0 px-3 py-3 sm:px-4 sm:py-4"
 			tabindex="-1"
 		>
-			<div class="pointer-events-none absolute inset-x-0 top-0 z-[60] flex justify-center">
+			<div class="pointer-events-none absolute inset-x-0 top-3 z-[60] flex justify-center">
 				<div
 					aria-label="Focus mode toolbar"
-					class="liquid-glass-toolbar pointer-events-auto inline-flex items-center gap-1 rounded-full p-1"
+					class="pointer-events-auto inline-flex items-center gap-1 rounded-full border border-border/70 bg-background/90 p-1 shadow-lg backdrop-blur"
 					role="toolbar"
 				>
 					<div aria-label="Viewer layout" class="flex items-center gap-1" role="group">
 						<Button
 							aria-label="Switch to 1-column layout"
 							aria-pressed={layout === 1}
-							class="liquid-glass-button relative z-10"
-							variant="ghost"
+							variant={layout === 1 ? 'default' : 'ghost'}
 							size="xs"
 							title="Press 1 key for 1-column layout"
 							onclick={() => onLayoutChange(1)}
@@ -81,8 +80,7 @@
 						<Button
 							aria-label="Switch to 2-column layout"
 							aria-pressed={layout === 2}
-							class="liquid-glass-button relative z-10"
-							variant="ghost"
+							variant={layout === 2 ? 'default' : 'ghost'}
 							size="xs"
 							title="Press 2 key for 2-column layout"
 							onclick={() => onLayoutChange(2)}
@@ -92,8 +90,7 @@
 						<Button
 							aria-label="Switch to 3-column layout"
 							aria-pressed={layout === 3}
-							class="liquid-glass-button relative z-10"
-							variant="ghost"
+							variant={layout === 3 ? 'default' : 'ghost'}
 							size="xs"
 							title="Press 3 key for 3-column layout"
 							onclick={() => onLayoutChange(3)}
@@ -103,8 +100,7 @@
 					</div>
 					<Button
 						aria-label="Exit focus mode"
-						class="liquid-glass-button relative z-10"
-						variant="ghost"
+						variant="outline"
 						size="xs"
 						title="Press Escape key to exit focus mode"
 						onclick={onExit}

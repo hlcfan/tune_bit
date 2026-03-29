@@ -328,15 +328,14 @@
 			<div class="pointer-events-none absolute inset-x-0 top-0 z-10 flex justify-center pt-3">
 				<div
 					aria-label={`Zoom controls for ${pageLabel.toLowerCase()}`}
-					class="liquid-glass-toolbar pointer-events-auto inline-flex items-center gap-2 rounded-full p-1"
+					class="pointer-events-auto inline-flex items-center gap-2 rounded-full border border-border/70 bg-background/90 p-1 shadow-lg backdrop-blur"
 					role="group"
 				>
-					<Badge class="liquid-glass-badge relative z-10" variant="outline">{zoomLabel}</Badge>
+					<Badge variant="outline">{zoomLabel}</Badge>
 					<Button
 						aria-label={`Zoom out ${pageLabel.toLowerCase()}`}
-						class="liquid-glass-button relative z-10"
 						size="xs"
-						variant="ghost"
+						variant="outline"
 						disabled={!canZoomOut}
 						onclick={onZoomOut}
 					>
@@ -344,18 +343,16 @@
 					</Button>
 					<Button
 						aria-label={`Reset zoom for ${pageLabel.toLowerCase()}`}
-						class="liquid-glass-button relative z-10"
 						size="xs"
-						variant="ghost"
+						variant="outline"
 						onclick={onZoomReset}
 					>
 						Reset
 					</Button>
 					<Button
 						aria-label={`Zoom in ${pageLabel.toLowerCase()}`}
-						class="liquid-glass-button relative z-10"
 						size="xs"
-						variant="ghost"
+						variant="outline"
 						disabled={!canZoomIn}
 						onclick={onZoomIn}
 					>
