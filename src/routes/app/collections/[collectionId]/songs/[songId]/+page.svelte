@@ -158,12 +158,10 @@
 		});
 		resizeObserver.observe(currentViewerToolbarElement);
 		window.addEventListener('resize', updateViewerViewportHeight);
-		window.addEventListener('scroll', updateViewerViewportHeight, { passive: true });
 
 		return () => {
 			resizeObserver.disconnect();
 			window.removeEventListener('resize', updateViewerViewportHeight);
-			window.removeEventListener('scroll', updateViewerViewportHeight);
 		};
 	});
 

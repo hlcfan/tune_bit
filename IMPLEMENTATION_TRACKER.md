@@ -161,6 +161,7 @@
 - Updated the song note viewer to scale each PDF and image page to the available viewport height so the full note content fits on screen by default in both normal and focus modes.
 - Split focus mode into a dedicated full-screen viewer with explicit one-, two-, and three-column layouts plus floating per-page resize controls that no longer add extra chrome or padding around each note.
 - Centered the song-page upload modal so it opens consistently in the middle of the viewport like the delete-note dialog.
+- Stopped the song viewer from recalculating page viewport height on window scroll so scrolling no longer resizes note images or PDF pages unexpectedly.
 
 ### Next Recommended Slice
 
