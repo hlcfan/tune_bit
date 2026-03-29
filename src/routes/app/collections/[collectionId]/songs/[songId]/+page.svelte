@@ -4,6 +4,7 @@
 	import { invalidateAll } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
+	import FocusModeViewer from '$lib/components/note-viewer/focus-mode-viewer.svelte';
 	import SongNotePage from '$lib/components/note-viewer/song-note-page.svelte';
 	import { Badge } from '$lib/components/ui/badge/index.js';
 	import { Button, buttonVariants } from '$lib/components/ui/button/index.js';
@@ -118,9 +119,6 @@
 				? 'grid-cols-1 xl:grid-cols-2'
 				: 'grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3'
 	);
-	const surfaceClass = $derived(
-		isFocusMode ? 'fixed inset-0 z-50 overflow-y-auto bg-background px-3 py-3 sm:px-4 sm:py-4' : ''
-	);
 
 	$effect(() => {
 		if (data.message) {
@@ -146,7 +144,7 @@
 		const currentViewerToolbarElement = viewerToolbarElement;
 		const updateViewerViewportHeight = () => {
 			const sectionTop = Math.max(currentViewerToolbarElement.getBoundingClientRect().top, 0);
-			const reservedViewportHeight = isFocusMode ? 96 : 24;
+			const reservedViewportHeight = 24;
 			viewerViewportHeight = Math.max(
 				Math.floor(window.innerHeight - sectionTop - reservedViewportHeight),
 				320
@@ -691,7 +689,7 @@
 	/>
 </svelte:head>
 
-<div class={surfaceClass}>
+<div>
 	<div class="space-y-6">
 		{#if !isFocusMode}
 			<section class="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
@@ -762,113 +760,78 @@
 					</Button>
 				</div>
 			</section>
-		{:else}
-			<div class="pointer-events-none fixed inset-x-0 top-0 z-[60] flex justify-center">
-				<div
-					aria-label="Focus mode toolbar"
-					class="pointer-events-auto inline-flex items-center gap-1 rounded-full border border-border/70 bg-background/90 p-1 shadow-lg backdrop-blur"
-					role="toolbar"
-				>
-					<div aria-label="Viewer layout" class="flex items-center gap-1" role="group">
-						<Button
-							aria-label="Switch to 1-column layout"
-							aria-pressed={layout === 1}
-							variant={layout === 1 ? 'default' : 'ghost'}
-							size="xs"
-							title="Press 1 key for 1-column layout"
-							onclick={() => setLayout(1)}
-						>
-							1
-						</Button>
-						<Button
-							aria-label="Switch to 2-column layout"
-							aria-pressed={layout === 2}
-							variant={layout === 2 ? 'default' : 'ghost'}
-							size="xs"
-							title="Press 2 key for 2-column layout"
-							onclick={() => setLayout(2)}
-						>
-							2
-						</Button>
-						<Button
-							aria-label="Switch to 3-column layout"
-							aria-pressed={layout === 3}
-							variant={layout === 3 ? 'default' : 'ghost'}
-							size="xs"
-							title="Press 3 key for 3-column layout"
-							onclick={() => setLayout(3)}
-						>
-							3
-						</Button>
-					</div>
-					<Button
-						aria-label="Exit focus mode"
-						aria-pressed={isFocusMode}
-						data-focus-mode-toggle="true"
-						variant="outline"
-						size="xs"
-						title="Press Escape key to exit focus mode"
-						onclick={toggleFocusMode}
-					>
-						Exit
-					</Button>
-				</div>
-			</div>
 		{/if}
 
-		<section
-			bind:this={viewerToolbarElement}
-			aria-label="Song viewer"
-			class="min-w-0 space-y-5"
-			tabindex="-1"
-		>
-			{#if feedbackMessage}
-				<p aria-live="polite" class={`rounded-2xl border px-4 py-3 text-sm ${feedbackClass}`}>
-					{feedbackMessage}
-				</p>
-			{/if}
-			{#if viewerPages.length === 0}
-				<Card class="border-border/70">
-					<CardContent class="py-14">
-						<div class="mx-auto max-w-xl space-y-3 text-center">
-							<p class="text-2xl font-semibold tracking-tight">
-								Upload the first note file to start reading.
-							</p>
-							<p class="text-sm leading-6 text-muted-foreground">
-								Tune Bit renders PDFs in the browser on demand and keeps uploaded image files in
-								page order with the same viewer controls.
-							</p>
-							{#if !isFocusMode}
+		{#if isFocusMode}
+			<FocusModeViewer
+				bind:viewerElement={viewerToolbarElement}
+				{layout}
+				{viewerPages}
+				maxViewportHeight={viewerViewportHeight}
+				{feedbackMessage}
+				{feedbackClass}
+				{getPageZoom}
+				onLayoutChange={setLayout}
+				onExit={toggleFocusMode}
+				onZoomIn={zoomIn}
+				onZoomOut={zoomOut}
+				onZoomReset={resetZoom}
+				minPageZoom={MIN_PAGE_ZOOM}
+				maxPageZoom={MAX_PAGE_ZOOM}
+			/>
+		{:else}
+			<section
+				bind:this={viewerToolbarElement}
+				aria-label="Song viewer"
+				class="min-w-0 space-y-5"
+				tabindex="-1"
+			>
+				{#if feedbackMessage}
+					<p aria-live="polite" class={`rounded-2xl border px-4 py-3 text-sm ${feedbackClass}`}>
+						{feedbackMessage}
+					</p>
+				{/if}
+				{#if viewerPages.length === 0}
+					<Card class="border-border/70">
+						<CardContent class="py-14">
+							<div class="mx-auto max-w-xl space-y-3 text-center">
+								<p class="text-2xl font-semibold tracking-tight">
+									Upload the first note file to start reading.
+								</p>
+								<p class="text-sm leading-6 text-muted-foreground">
+									Tune Bit renders PDFs in the browser on demand and keeps uploaded image files in
+									page order with the same viewer controls.
+								</p>
 								<div class="pt-2">
 									<Button onclick={openUploadModal}>Upload Notes</Button>
 								</div>
-							{/if}
-						</div>
-					</CardContent>
-				</Card>
-			{:else}
-				<div class={`grid gap-4 ${viewerGridClass}`}>
-					{#each viewerPages as viewerPage (viewerPage.id)}
-						<SongNotePage
-							fileName={viewerPage.fileName}
-							fileUrl={viewerPage.fileUrl}
-							maxViewportHeight={viewerViewportHeight}
-							mimeLabel={viewerPage.mimeLabel}
-							mimeType={viewerPage.mimeType}
-							pageNumber={viewerPage.page_number}
-							sortOrder={viewerPage.sort_order}
-							zoom={getPageZoom(viewerPage.id)}
-							canZoomIn={getPageZoom(viewerPage.id) < MAX_PAGE_ZOOM}
-							canZoomOut={getPageZoom(viewerPage.id) > MIN_PAGE_ZOOM}
-							onDelete={() => openDeleteNoteDialog(viewerPage.note_file_id)}
-							onZoomIn={() => zoomIn(viewerPage.id)}
-							onZoomOut={() => zoomOut(viewerPage.id)}
-							onZoomReset={() => resetZoom(viewerPage.id)}
-						/>
-					{/each}
-				</div>
-			{/if}
-		</section>
+							</div>
+						</CardContent>
+					</Card>
+				{:else}
+					<div class={`grid gap-4 ${viewerGridClass}`}>
+						{#each viewerPages as viewerPage (viewerPage.id)}
+							<SongNotePage
+								fileName={viewerPage.fileName}
+								fileUrl={viewerPage.fileUrl}
+								maxViewportHeight={viewerViewportHeight}
+								mimeLabel={viewerPage.mimeLabel}
+								mimeType={viewerPage.mimeType}
+								pageNumber={viewerPage.page_number}
+								sortOrder={viewerPage.sort_order}
+								zoom={getPageZoom(viewerPage.id)}
+								canZoomIn={getPageZoom(viewerPage.id) < MAX_PAGE_ZOOM}
+								canZoomOut={getPageZoom(viewerPage.id) > MIN_PAGE_ZOOM}
+								onDelete={() => openDeleteNoteDialog(viewerPage.note_file_id)}
+								onZoomIn={() => zoomIn(viewerPage.id)}
+								onZoomOut={() => zoomOut(viewerPage.id)}
+								onZoomReset={() => resetZoom(viewerPage.id)}
+							/>
+						{/each}
+					</div>
+				{/if}
+			</section>
+		{/if}
 
 		{#if !isFocusMode}
 			<dialog

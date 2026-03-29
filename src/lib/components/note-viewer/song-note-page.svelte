@@ -59,7 +59,9 @@
 		onDelete,
 		onZoomIn,
 		onZoomOut,
-		onZoomReset
+		onZoomReset,
+		isFocusMode = false,
+		showDeleteButton = true
 	}: {
 		fileName: string;
 		fileUrl: string;
@@ -71,10 +73,12 @@
 		zoom: number;
 		canZoomIn: boolean;
 		canZoomOut: boolean;
-		onDelete: () => void;
+		onDelete?: () => void;
 		onZoomIn: () => void;
 		onZoomOut: () => void;
 		onZoomReset: () => void;
+		isFocusMode?: boolean;
+		showDeleteButton?: boolean;
 	} = $props();
 
 	let pageElement = $state<HTMLElement | null>(null);
@@ -94,16 +98,20 @@
 	const pageLabel = $derived(`Page ${sortOrder + 1}`);
 	const zoomLabel = $derived(`${Math.round(zoom * 100)}%`);
 	const pageHeadingId = $derived(`song-note-page-${sortOrder + 1}`);
+	const contentInset = $derived(isFocusMode ? 0 : 24);
 	const contentViewportHeight = $derived(
-		Math.max(Math.floor(maxViewportHeight - pageHeaderHeight - 48), 220)
+		Math.max(
+			Math.floor(maxViewportHeight - (isFocusMode ? 0 : pageHeaderHeight) - (isFocusMode ? 0 : 48)),
+			isFocusMode ? 260 : 220
+		)
 	);
 	const imageDisplayDimensions = $derived.by(() => {
 		if (imageNaturalWidth === 0 || imageNaturalHeight === 0) {
 			return null;
 		}
 
-		const fitWidthScale = Math.max(renderWidth - 24, 240) / imageNaturalWidth;
-		const fitHeightScale = Math.max(contentViewportHeight - 24, 160) / imageNaturalHeight;
+		const fitWidthScale = Math.max(renderWidth - contentInset, 240) / imageNaturalWidth;
+		const fitHeightScale = Math.max(contentViewportHeight - contentInset, 160) / imageNaturalHeight;
 		const displayScale = Math.max(Math.min(fitWidthScale, fitHeightScale), 0.1) * zoom;
 
 		return {
@@ -223,8 +231,9 @@
 				}
 
 				const baseViewport = pdfPage.getViewport({ scale: 1 });
-				const fitWidthScale = Math.max(renderWidth - 24, 240) / baseViewport.width;
-				const fitHeightScale = Math.max(contentViewportHeight - 24, 160) / baseViewport.height;
+				const fitWidthScale = Math.max(renderWidth - contentInset, 240) / baseViewport.width;
+				const fitHeightScale =
+					Math.max(contentViewportHeight - contentInset, 160) / baseViewport.height;
 				const displayScale = Math.max(Math.min(fitWidthScale, fitHeightScale), 0.1) * zoom;
 				const deviceScale = displayScale * (window.devicePixelRatio || 1);
 				const displayViewport = pdfPage.getViewport({ scale: displayScale });
@@ -305,108 +314,163 @@
 <div
 	bind:this={pageElement}
 	aria-labelledby={pageHeadingId}
-	class="rounded-3xl border border-border/70 bg-card/95 p-4 shadow-sm"
+	class={isFocusMode
+		? 'relative min-w-0'
+		: 'rounded-3xl border border-border/70 bg-card/95 p-4 shadow-sm'}
 	role="group"
 	style="content-visibility: auto; contain-intrinsic-size: 900px;"
 >
-	<div class="space-y-4">
-		<div bind:this={pageHeaderElement} class="flex flex-wrap items-start justify-between gap-3">
-			<div class="min-w-0">
-				<div class="flex flex-wrap items-center gap-2">
-					<Badge variant="outline">{pageLabel}</Badge>
-					<Badge variant="outline">{mimeLabel}</Badge>
-					<p id={pageHeadingId} class="min-w-0 font-medium break-all">
-						{fileName}
-					</p>
+	<div class={isFocusMode ? 'relative' : 'space-y-4'}>
+		{#if isFocusMode}
+			<p id={pageHeadingId} class="sr-only">
+				{fileName} · {pageLabel} · {mimeLabel}
+			</p>
+			<div class="pointer-events-none absolute inset-x-0 top-0 z-10 flex justify-center pt-3">
+				<div
+					aria-label={`Zoom controls for ${pageLabel.toLowerCase()}`}
+					class="pointer-events-auto inline-flex items-center gap-2 rounded-full border border-border/70 bg-background/90 p-1 shadow-lg backdrop-blur"
+					role="group"
+				>
+					<Badge variant="outline">{zoomLabel}</Badge>
+					<Button
+						aria-label={`Zoom out ${pageLabel.toLowerCase()}`}
+						size="xs"
+						variant="outline"
+						disabled={!canZoomOut}
+						onclick={onZoomOut}
+					>
+						−
+					</Button>
+					<Button
+						aria-label={`Reset zoom for ${pageLabel.toLowerCase()}`}
+						size="xs"
+						variant="outline"
+						onclick={onZoomReset}
+					>
+						Reset
+					</Button>
+					<Button
+						aria-label={`Zoom in ${pageLabel.toLowerCase()}`}
+						size="xs"
+						variant="outline"
+						disabled={!canZoomIn}
+						onclick={onZoomIn}
+					>
+						+
+					</Button>
 				</div>
 			</div>
+		{:else}
+			<div bind:this={pageHeaderElement} class="flex flex-wrap items-start justify-between gap-3">
+				<div class="min-w-0">
+					<div class="flex flex-wrap items-center gap-2">
+						<Badge variant="outline">{pageLabel}</Badge>
+						<Badge variant="outline">{mimeLabel}</Badge>
+						<p id={pageHeadingId} class="min-w-0 font-medium break-all">
+							{fileName}
+						</p>
+					</div>
+				</div>
 
-			<div
-				aria-label={`Zoom controls for ${pageLabel.toLowerCase()}`}
-				class="flex flex-wrap items-center justify-end gap-2"
-				role="group"
-			>
-				<Button
-					aria-label={`Delete ${fileName}`}
-					class="text-destructive hover:text-destructive"
-					size="icon-xs"
-					variant="outline"
-					onclick={onDelete}
+				<div
+					aria-label={`Zoom controls for ${pageLabel.toLowerCase()}`}
+					class="flex flex-wrap items-center justify-end gap-2"
+					role="group"
 				>
-					<Trash2 />
-				</Button>
-				<Badge variant="outline">{zoomLabel}</Badge>
-				<Button
-					aria-label={`Zoom out ${pageLabel.toLowerCase()}`}
-					size="xs"
-					variant="outline"
-					disabled={!canZoomOut}
-					onclick={onZoomOut}
-				>
-					−
-				</Button>
-				<Button
-					aria-label={`Reset zoom for ${pageLabel.toLowerCase()}`}
-					size="xs"
-					variant="outline"
-					onclick={onZoomReset}
-				>
-					Reset
-				</Button>
-				<Button
-					aria-label={`Zoom in ${pageLabel.toLowerCase()}`}
-					size="xs"
-					variant="outline"
-					disabled={!canZoomIn}
-					onclick={onZoomIn}
-				>
-					+
-				</Button>
+					{#if showDeleteButton && onDelete}
+						<Button
+							aria-label={`Delete ${fileName}`}
+							class="text-destructive hover:text-destructive"
+							size="icon-xs"
+							variant="outline"
+							onclick={onDelete}
+						>
+							<Trash2 />
+						</Button>
+					{/if}
+					<Badge variant="outline">{zoomLabel}</Badge>
+					<Button
+						aria-label={`Zoom out ${pageLabel.toLowerCase()}`}
+						size="xs"
+						variant="outline"
+						disabled={!canZoomOut}
+						onclick={onZoomOut}
+					>
+						−
+					</Button>
+					<Button
+						aria-label={`Reset zoom for ${pageLabel.toLowerCase()}`}
+						size="xs"
+						variant="outline"
+						onclick={onZoomReset}
+					>
+						Reset
+					</Button>
+					<Button
+						aria-label={`Zoom in ${pageLabel.toLowerCase()}`}
+						size="xs"
+						variant="outline"
+						disabled={!canZoomIn}
+						onclick={onZoomIn}
+					>
+						+
+					</Button>
+				</div>
 			</div>
-		</div>
+		{/if}
 
 		<div
 			bind:this={canvasContainer}
 			aria-busy={isPdf ? isLoading : !imageLoaded && !errorMessage}
-			class="flex items-start justify-center overflow-auto rounded-2xl bg-muted/20 p-3"
+			class={isFocusMode
+				? 'flex items-start justify-center overflow-auto bg-transparent'
+				: 'flex items-start justify-center overflow-auto rounded-2xl bg-muted/20 p-3'}
 			style={`height: ${contentViewportHeight}px;`}
 		>
 			{#if isPdf}
 				{#if !isVisible}
-					<div class="aspect-[8.5/11] h-full animate-pulse rounded-xl bg-muted"></div>
+					<div
+						class={`aspect-[8.5/11] h-full animate-pulse bg-muted ${isFocusMode ? '' : 'rounded-xl'}`}
+					></div>
 				{:else if errorMessage}
 					<div
-						class="flex aspect-[8.5/11] h-full items-center justify-center rounded-xl border border-dashed px-4 text-center text-sm text-muted-foreground"
+						class={`flex aspect-[8.5/11] h-full items-center justify-center border border-dashed px-4 text-center text-sm text-muted-foreground ${isFocusMode ? '' : 'rounded-xl'}`}
 					>
 						{errorMessage}
 					</div>
 				{:else}
 					{#if isLoading}
-						<div class="aspect-[8.5/11] h-full animate-pulse rounded-xl bg-muted"></div>
+						<div
+							class={`aspect-[8.5/11] h-full animate-pulse bg-muted ${isFocusMode ? '' : 'rounded-xl'}`}
+						></div>
 					{/if}
 					<canvas
 						bind:this={canvasElement}
-						class={`rounded-xl bg-white shadow-sm ${isLoading ? 'hidden' : 'block'}`}
+						class={`${isFocusMode ? 'bg-white' : 'rounded-xl bg-white shadow-sm'} ${isLoading ? 'hidden' : 'block'}`}
 					></canvas>
 				{/if}
 			{:else if !isVisible}
-				<div class="aspect-[8.5/11] h-full animate-pulse rounded-xl bg-muted"></div>
+				<div
+					class={`aspect-[8.5/11] h-full animate-pulse bg-muted ${isFocusMode ? '' : 'rounded-xl'}`}
+				></div>
 			{:else if errorMessage}
 				<div
-					class="flex aspect-[8.5/11] h-full items-center justify-center rounded-xl border border-dashed px-4 text-center text-sm text-muted-foreground"
+					class={`flex aspect-[8.5/11] h-full items-center justify-center border border-dashed px-4 text-center text-sm text-muted-foreground ${isFocusMode ? '' : 'rounded-xl'}`}
 				>
 					{errorMessage}
 				</div>
 			{:else}
 				<div class="relative">
 					{#if !imageLoaded}
-						<div class="absolute inset-0 animate-pulse rounded-xl bg-muted"></div>
+						<div
+							class={`absolute inset-0 animate-pulse bg-muted ${isFocusMode ? '' : 'rounded-xl'}`}
+						></div>
 					{/if}
 					<img
 						src={fileUrl}
 						alt={`${fileName} page ${sortOrder + 1}`}
 						loading="lazy"
-						class={`rounded-xl bg-white shadow-sm transition-opacity ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
+						class={`${isFocusMode ? 'bg-white' : 'rounded-xl bg-white shadow-sm'} transition-opacity ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
 						style={imageDisplayDimensions
 							? `width: ${imageDisplayDimensions.width}px; height: ${imageDisplayDimensions.height}px;`
 							: ''}
