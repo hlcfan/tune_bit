@@ -1,8 +1,13 @@
-import { redirect } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 
 export const POST: RequestHandler = async ({ locals }) => {
 	await locals.supabase.auth.signOut();
 
-	redirect(303, '/sign-in');
+	return new Response(null, {
+		status: 303,
+		headers: {
+			location: '/sign-in',
+			'clear-site-data': '"cache"'
+		}
+	});
 };

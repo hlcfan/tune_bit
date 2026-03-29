@@ -2,6 +2,7 @@ import { getStoredObject, getStoredObjectMetadata } from '$lib/server/uploads.js
 import { error, redirect } from '@sveltejs/kit';
 
 const APP_PATH = '/app';
+const NOTE_FILE_BROWSER_CACHE_MAX_AGE_SECONDS = 60 * 60 * 24 * 365;
 
 async function requireUser(locals: App.Locals) {
 	const { user } = await locals.safeGetSession();
@@ -59,9 +60,10 @@ function buildResponseHeaders(
 ) {
 	const headers = new Headers({
 		'accept-ranges': 'bytes',
-		'cache-control': 'private, max-age=60',
+		'cache-control': `private, max-age=${NOTE_FILE_BROWSER_CACHE_MAX_AGE_SECONDS}, immutable`,
 		'content-disposition': `inline; filename*=UTF-8''${encodeURIComponent(noteFile.original_filename)}`,
-		'content-type': storedObject.ContentType ?? noteFile.mime_type
+		'content-type': storedObject.ContentType ?? noteFile.mime_type,
+		vary: 'cookie'
 	});
 
 	if (typeof storedObject.ContentLength === 'number') {
