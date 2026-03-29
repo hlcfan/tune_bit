@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { browser } from '$app/environment';
-	import { invalidateAll } from '$app/navigation';
+	import { goto, invalidateAll } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import FocusModeViewer from '$lib/components/note-viewer/focus-mode-viewer.svelte';
@@ -44,6 +44,12 @@
 		created_at: string;
 	};
 
+	type CollectionSong = {
+		id: string;
+		title: string;
+		updated_at: string;
+	};
+
 	type ViewerLayout = 1 | 2 | 3;
 
 	const LAYOUT_STORAGE_KEY = 'tune-bit.viewer-layout';
@@ -70,11 +76,22 @@
 	let viewerViewportHeight = $state(720);
 	let focusReturnElement = $state<HTMLElement | null>(null);
 	let activeNoteFileId = $state<string | null>(null);
+	let isChangingSong = $state(false);
 
+	const collectionSongs = $derived((data.collectionSongs ?? []) as CollectionSong[]);
 	const noteFiles = $derived((data.noteFiles ?? []) as NoteFile[]);
 	const notePages = $derived((data.notePages ?? []) as NotePage[]);
 	const noteFilesById = $derived(
 		new Map(noteFiles.map((noteFile) => [noteFile.id, noteFile] as const))
+	);
+	const currentSongIndex = $derived(collectionSongs.findIndex((song) => song.id === data.song.id));
+	const previousSong = $derived(
+		currentSongIndex > 0 ? collectionSongs[currentSongIndex - 1] : null
+	);
+	const nextSong = $derived(
+		currentSongIndex >= 0 && currentSongIndex < collectionSongs.length - 1
+			? collectionSongs[currentSongIndex + 1]
+			: null
 	);
 	const activeNoteFile = $derived(
 		activeNoteFileId ? (noteFilesById.get(activeNoteFileId) ?? null) : null
@@ -242,9 +259,25 @@
 				return;
 			}
 
+			if (event.metaKey || event.ctrlKey || event.altKey) {
+				return;
+			}
+
 			if (event.key === 'Escape' && isFocusMode) {
 				event.preventDefault();
 				void setFocusMode(false);
+				return;
+			}
+
+			if (isFocusMode && event.key === 'ArrowLeft') {
+				event.preventDefault();
+				void navigateToSiblingSong('previous');
+				return;
+			}
+
+			if (isFocusMode && event.key === 'ArrowRight') {
+				event.preventDefault();
+				void navigateToSiblingSong('next');
 				return;
 			}
 
@@ -511,6 +544,31 @@
 
 	function toggleFocusMode() {
 		void setFocusMode(!isFocusMode);
+	}
+
+	async function navigateToSiblingSong(direction: 'previous' | 'next') {
+		if (!browser || isChangingSong) {
+			return;
+		}
+
+		const targetSong = direction === 'previous' ? previousSong : nextSong;
+
+		if (!targetSong) {
+			return;
+		}
+
+		isChangingSong = true;
+
+		try {
+			await goto(
+				resolve('/app/collections/[collectionId]/songs/[songId]', {
+					collectionId: data.collection.id,
+					songId: targetSong.id
+				})
+			);
+		} finally {
+			isChangingSong = false;
+		}
 	}
 
 	function getPageZoom(pageId: string) {

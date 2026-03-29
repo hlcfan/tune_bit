@@ -7,7 +7,6 @@
 		Card,
 		CardContent,
 		CardDescription,
-		CardFooter,
 		CardHeader,
 		CardTitle
 	} from '$lib/components/ui/card/index.js';
@@ -147,13 +146,10 @@
 				<Badge variant="outline">{getSongCountLabel(data.songs.length)}</Badge>
 				<Badge variant="outline">{totalUploadedFiles} files</Badge>
 				<Badge variant="outline">{totalUploadedPages} pages</Badge>
+				<Badge variant="outline">Updated {getDateLabel(data.collection.updated_at)}</Badge>
 			</div>
 			<div class="space-y-2">
 				<h1 class="text-4xl font-semibold tracking-tight">{data.collection.name}</h1>
-				<p class="max-w-3xl text-base text-muted-foreground">
-					Browse songs quickly, add a new one with this collection preselected, or update the
-					collection settings here.
-				</p>
 			</div>
 		</div>
 
@@ -273,31 +269,8 @@
 		<div class="space-y-6">
 			<Card class="border-border/70">
 				<CardHeader class="space-y-2">
-					<CardTitle>Collection details</CardTitle>
-					<CardDescription>
-						Keep the collection name current or remove the entire set when it is no longer needed.
-					</CardDescription>
-				</CardHeader>
-				<CardContent class="grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
-					<div class="rounded-2xl border border-dashed px-4 py-4">
-						<p class="text-sm text-muted-foreground">Songs</p>
-						<p class="mt-2 font-medium">{data.songs.length}</p>
-					</div>
-					<div class="rounded-2xl border border-dashed px-4 py-4">
-						<p class="text-sm text-muted-foreground">Files</p>
-						<p class="mt-2 font-medium">{totalUploadedFiles}</p>
-					</div>
-					<div class="rounded-2xl border border-dashed px-4 py-4">
-						<p class="text-sm text-muted-foreground">Updated</p>
-						<p class="mt-2 font-medium">{getDateLabel(data.collection.updated_at)}</p>
-					</div>
-				</CardContent>
-			</Card>
-
-			<Card class="border-border/70">
-				<CardHeader class="space-y-2">
 					<CardTitle>Settings</CardTitle>
-					<CardDescription>Rename or delete this collection.</CardDescription>
+					<CardDescription>Rename this collection.</CardDescription>
 				</CardHeader>
 				<CardContent class="space-y-4">
 					<form method="POST" action="?/renameCollection" class="space-y-4">
@@ -314,11 +287,6 @@
 						<Button type="submit" variant="outline" class="w-full">Save collection name</Button>
 					</form>
 				</CardContent>
-				<CardFooter>
-					<form method="POST" action="?/deleteCollection" class="w-full">
-						<Button type="submit" variant="destructive" class="w-full">Delete collection</Button>
-					</form>
-				</CardFooter>
 			</Card>
 		</div>
 	</section>

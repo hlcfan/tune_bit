@@ -163,6 +163,7 @@
 - Centered the song-page upload modal so it opens consistently in the middle of the viewport like the delete-note dialog.
 - Stopped the song viewer from recalculating page viewport height on window scroll so scrolling no longer resizes note images or PDF pages unexpectedly.
 - Simplified the floating signed-in menu into an avatar-only trigger, anchored its popup above the avatar, and hid it while the song viewer is in focus mode.
+- Added left-arrow and right-arrow shortcuts in song focus mode so readers can move to the previous or next song in the same collection without leaving the full-screen viewer.
 
 ### Next Recommended Slice
 

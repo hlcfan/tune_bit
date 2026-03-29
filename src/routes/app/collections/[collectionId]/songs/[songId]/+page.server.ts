@@ -21,6 +21,12 @@ type SongRow = {
 	updated_at: string;
 };
 
+type CollectionSongRow = {
+	id: string;
+	title: string;
+	updated_at: string;
+};
+
 type NoteFileRow = {
 	id: string;
 	original_filename: string;
@@ -101,23 +107,32 @@ export const load = async ({
 		loadCollection(locals, user.id, params.collectionId),
 		loadSong(locals, user.id, params.collectionId, params.songId)
 	]);
-	const [{ data: noteFiles, error: noteFilesError }, { data: notePages, error: notePagesError }] =
-		await Promise.all([
-			locals.supabase
-				.from('note_files')
-				.select('id, original_filename, mime_type, page_count, created_at')
-				.eq('user_id', user.id)
-				.eq('song_id', params.songId)
-				.order('created_at', { ascending: true }),
-			locals.supabase
-				.from('note_pages')
-				.select('id, note_file_id, page_number, sort_order, preview_key, created_at')
-				.eq('user_id', user.id)
-				.eq('song_id', params.songId)
-				.order('sort_order', { ascending: true })
-		]);
+	const [
+		{ data: noteFiles, error: noteFilesError },
+		{ data: notePages, error: notePagesError },
+		{ data: collectionSongs, error: collectionSongsError }
+	] = await Promise.all([
+		locals.supabase
+			.from('note_files')
+			.select('id, original_filename, mime_type, page_count, created_at')
+			.eq('user_id', user.id)
+			.eq('song_id', params.songId)
+			.order('created_at', { ascending: true }),
+		locals.supabase
+			.from('note_pages')
+			.select('id, note_file_id, page_number, sort_order, preview_key, created_at')
+			.eq('user_id', user.id)
+			.eq('song_id', params.songId)
+			.order('sort_order', { ascending: true }),
+		locals.supabase
+			.from('songs')
+			.select('id, title, updated_at')
+			.eq('user_id', user.id)
+			.eq('collection_id', params.collectionId)
+			.order('updated_at', { ascending: false })
+	]);
 
-	if (noteFilesError || notePagesError) {
+	if (noteFilesError || notePagesError || collectionSongsError) {
 		error(500, 'Could not load the uploaded note data right now.');
 	}
 
@@ -125,6 +140,7 @@ export const load = async ({
 		message: url.searchParams.get('message'),
 		collection,
 		song,
+		collectionSongs: (collectionSongs ?? []) as CollectionSongRow[],
 		noteFiles: (noteFiles ?? []) as NoteFileRow[],
 		notePages: (notePages ?? []) as NotePageRow[]
 	};
