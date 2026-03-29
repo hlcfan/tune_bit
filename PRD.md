@@ -52,6 +52,7 @@ Build a personal note library that lets a signed-in user:
 - As a user, I can drag and drop multiple files into an upload flow.
 - As a user, I can upload image files for note pages.
 - As a user, I can upload PDF files for note pages.
+- As a user, I can choose which PDF pages to include when uploading a PDF into a song.
 - As a user, I can store multiple pages under one song.
 - As a user, I can view song pages in the correct order.
 - As a user, I can upload notes from the song page in a modal without leaving the current song.
@@ -113,6 +114,7 @@ Build a personal note library that lets a signed-in user:
 - Users can upload multiple files in a single action.
 - A note upload creates one or more pages attached to a song.
 - For PDFs, the system stores the original file and renders the uploaded PDF on demand in the browser.
+- For PDFs, the upload flow allows optional page selection by range or comma-separated page numbers, and leaving the field blank uploads every page.
 - For images, each uploaded image is treated as a single note page.
 - Each page has an order index within a song.
 - Uploading notes to an existing song is initiated from a modal on the song page.

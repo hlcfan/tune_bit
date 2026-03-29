@@ -9,6 +9,8 @@
 	import { Badge } from '$lib/components/ui/badge/index.js';
 	import { Button, buttonVariants } from '$lib/components/ui/button/index.js';
 	import { Card, CardContent } from '$lib/components/ui/card/index.js';
+	import { Input } from '$lib/components/ui/input/index.js';
+	import { getPageSelectionValidationMessage, parseSelectedPageNumbers } from '$lib/utils.js';
 	import type { SubmitFunction } from '@sveltejs/kit';
 	import { onMount, tick } from 'svelte';
 
@@ -18,6 +20,7 @@
 		signedUploadUrl: string;
 		storageKey: string;
 		uploadHeaders: Record<string, string>;
+		pageSelection?: string;
 	};
 
 	type UploadProgressItem = {
@@ -64,7 +67,11 @@
 	let deleteNoteDialog = $state<HTMLDialogElement | null>(null);
 	let uploadInput = $state<HTMLInputElement | null>(null);
 	let selectedUploadFiles = $state<File[]>([]);
+	let uploadPageSelectionById = $state<Record<string, string>>({});
 	let uploadProgressItems = $state<UploadProgressItem[]>([]);
+	let pdfPageCountById = $state<Record<string, number>>({});
+	let pdfPageCountErrorById = $state<Record<string, string>>({});
+	let pendingPdfPageCountById = $state<Record<string, boolean>>({});
 	let feedbackMessage = $state('');
 	let isFeedbackError = $state(false);
 	let isUploading = $state(false);
@@ -77,10 +84,17 @@
 	let focusReturnElement = $state<HTMLElement | null>(null);
 	let activeNoteFileId = $state<string | null>(null);
 	let isChangingSong = $state(false);
+	let pdfMetadataRequestToken = 0;
 
 	const collectionSongs = $derived((data.collectionSongs ?? []) as CollectionSong[]);
 	const noteFiles = $derived((data.noteFiles ?? []) as NoteFile[]);
 	const notePages = $derived((data.notePages ?? []) as NotePage[]);
+	const selectedUploadEntries = $derived(
+		selectedUploadFiles.map((file, index) => ({
+			file,
+			progressItemId: getUploadProgressItemId(file, index)
+		}))
+	);
 	const noteFilesById = $derived(
 		new Map(noteFiles.map((noteFile) => [noteFile.id, noteFile] as const))
 	);
@@ -121,7 +135,19 @@
 				: [];
 		})
 	);
-	const uploadFiles = $derived(selectedUploadFiles.map((file) => file.name));
+	const hasPendingPdfPageCounts = $derived(
+		selectedUploadEntries.some(
+			({ file, progressItemId }) => isPdfFile(file) && pendingPdfPageCountById[progressItemId]
+		)
+	);
+	const hasUploadPageSelectionErrors = $derived(
+		selectedUploadEntries.some(({ file, progressItemId }) =>
+			Boolean(getUploadPageSelectionError(file, progressItemId))
+		)
+	);
+	const isUploadSubmitDisabled = $derived(
+		isUploading || hasPendingPdfPageCounts || hasUploadPageSelectionErrors
+	);
 	const feedbackClass = $derived(
 		isFeedbackError
 			? 'border-destructive/30 bg-destructive/5 text-destructive'
@@ -335,6 +361,225 @@
 		return `${index}-${file.name}-${file.lastModified}-${file.size}`;
 	}
 
+	function isPdfFile(file: File) {
+		return file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+	}
+
+	let pdfLibPromise: Promise<typeof import('pdf-lib')> | null = null;
+	let pdfPageCountCache: Record<string, Promise<number>> = {};
+
+	function getPdfLib() {
+		if (!pdfLibPromise) {
+			pdfLibPromise = import('pdf-lib');
+		}
+
+		return pdfLibPromise;
+	}
+
+	function getPdfCacheKey(file: File) {
+		return `${file.name}-${file.size}-${file.lastModified}`;
+	}
+
+	async function loadPdfPageCount(file: File) {
+		const cacheKey = getPdfCacheKey(file);
+		const cachedPageCount = pdfPageCountCache[cacheKey];
+
+		if (cachedPageCount) {
+			return cachedPageCount;
+		}
+
+		const nextPageCountPromise = (async () => {
+			const { PDFDocument } = await getPdfLib();
+			const document = await PDFDocument.load(await file.arrayBuffer());
+
+			return document.getPageCount();
+		})();
+
+		pdfPageCountCache = {
+			...pdfPageCountCache,
+			[cacheKey]: nextPageCountPromise
+		};
+		nextPageCountPromise.catch(() => {
+			const nextPdfPageCountCache = { ...pdfPageCountCache };
+			delete nextPdfPageCountCache[cacheKey];
+			pdfPageCountCache = nextPdfPageCountCache;
+		});
+
+		return nextPageCountPromise;
+	}
+
+	async function refreshPdfPageMetadata(files: File[]) {
+		const requestToken = ++pdfMetadataRequestToken;
+		const pdfEntries = files
+			.map((file, index) => ({
+				file,
+				progressItemId: getUploadProgressItemId(file, index)
+			}))
+			.filter(({ file }) => isPdfFile(file));
+
+		if (pdfEntries.length === 0) {
+			pdfPageCountById = {};
+			pdfPageCountErrorById = {};
+			pendingPdfPageCountById = {};
+			return;
+		}
+
+		const nextPdfPageCountById = Object.fromEntries(
+			pdfEntries.flatMap(({ progressItemId }) =>
+				typeof pdfPageCountById[progressItemId] === 'number'
+					? [[progressItemId, pdfPageCountById[progressItemId]]]
+					: []
+			)
+		);
+		const nextPdfPageCountErrorById = Object.fromEntries(
+			pdfEntries.flatMap(({ progressItemId }) =>
+				pdfPageCountErrorById[progressItemId]
+					? [[progressItemId, pdfPageCountErrorById[progressItemId]]]
+					: []
+			)
+		);
+		const pendingPdfEntries = pdfEntries.filter(
+			({ progressItemId }) =>
+				typeof nextPdfPageCountById[progressItemId] !== 'number' &&
+				!nextPdfPageCountErrorById[progressItemId]
+		);
+
+		pdfPageCountById = nextPdfPageCountById;
+		pdfPageCountErrorById = nextPdfPageCountErrorById;
+		pendingPdfPageCountById = Object.fromEntries(
+			pendingPdfEntries.map(({ progressItemId }) => [progressItemId, true])
+		);
+
+		if (pendingPdfEntries.length === 0) {
+			return;
+		}
+
+		const resolvedPdfEntries = await Promise.all(
+			pendingPdfEntries.map(async ({ file, progressItemId }) => {
+				try {
+					return {
+						progressItemId,
+						pageCount: await loadPdfPageCount(file)
+					};
+				} catch {
+					return {
+						progressItemId,
+						error:
+							'Could not read the page count for this PDF. Choose a different file or try again.'
+					};
+				}
+			})
+		);
+
+		if (requestToken !== pdfMetadataRequestToken) {
+			return;
+		}
+
+		const resolvedPdfPageCountById = { ...nextPdfPageCountById };
+		const resolvedPdfPageCountErrorById = { ...nextPdfPageCountErrorById };
+
+		for (const resolvedPdfEntry of resolvedPdfEntries) {
+			if (typeof resolvedPdfEntry.pageCount === 'number') {
+				resolvedPdfPageCountById[resolvedPdfEntry.progressItemId] = resolvedPdfEntry.pageCount;
+				delete resolvedPdfPageCountErrorById[resolvedPdfEntry.progressItemId];
+				continue;
+			}
+
+			if ('error' in resolvedPdfEntry) {
+				resolvedPdfPageCountErrorById[resolvedPdfEntry.progressItemId] = resolvedPdfEntry.error;
+			}
+		}
+
+		pdfPageCountById = resolvedPdfPageCountById;
+		pdfPageCountErrorById = resolvedPdfPageCountErrorById;
+		pendingPdfPageCountById = {};
+	}
+
+	function getUploadPageSelection(progressItemId: string) {
+		return uploadPageSelectionById[progressItemId] ?? '';
+	}
+
+	function updateUploadPageSelection(progressItemId: string, value: string) {
+		uploadPageSelectionById = {
+			...uploadPageSelectionById,
+			[progressItemId]: value
+		};
+	}
+
+	function getUploadPageSelectionError(file: File, progressItemId: string) {
+		if (!isPdfFile(file)) {
+			return null;
+		}
+
+		const pageSelection = getUploadPageSelection(progressItemId);
+		const syntaxValidationMessage = getPageSelectionValidationMessage(pageSelection);
+
+		if (syntaxValidationMessage) {
+			return syntaxValidationMessage;
+		}
+
+		if (pdfPageCountErrorById[progressItemId]) {
+			return pdfPageCountErrorById[progressItemId];
+		}
+
+		return getPageSelectionValidationMessage(pageSelection, {
+			pageCount: pdfPageCountById[progressItemId]
+		});
+	}
+
+	function getUploadPageSelectionMessage(file: File, progressItemId: string) {
+		if (!isPdfFile(file)) {
+			return 'Image files upload as one page.';
+		}
+
+		const pageSelectionError = getUploadPageSelectionError(file, progressItemId);
+
+		if (pageSelectionError) {
+			return pageSelectionError;
+		}
+
+		const pageSelection = getUploadPageSelection(progressItemId);
+		const selectedPages = parseSelectedPageNumbers(pageSelection, {
+			pageCount: pdfPageCountById[progressItemId]
+		});
+
+		if (pendingPdfPageCountById[progressItemId]) {
+			return selectedPages
+				? `${selectedPages.length} page${selectedPages.length === 1 ? '' : 's'} selected. Checking the PDF page count…`
+				: 'Checking the PDF page count…';
+		}
+
+		if (!selectedPages) {
+			const pageCount = pdfPageCountById[progressItemId];
+
+			return typeof pageCount === 'number'
+				? `All ${pageCount} pages will upload.`
+				: 'All pages will upload.';
+		}
+
+		const pageCount = pdfPageCountById[progressItemId];
+
+		return typeof pageCount === 'number'
+			? `${selectedPages.length} page${selectedPages.length === 1 ? '' : 's'} selected out of ${pageCount}.`
+			: `${selectedPages.length} page${selectedPages.length === 1 ? '' : 's'} selected.`;
+	}
+
+	function getUploadValidationMessage() {
+		if (hasPendingPdfPageCounts) {
+			return 'Wait for Tune Bit to finish reading the selected PDF page counts.';
+		}
+
+		for (const { file, progressItemId } of selectedUploadEntries) {
+			const pageSelectionError = getUploadPageSelectionError(file, progressItemId);
+
+			if (pageSelectionError) {
+				return `${file.name}: ${pageSelectionError}`;
+			}
+		}
+
+		return null;
+	}
+
 	function syncUploadInputFiles(files: File[]) {
 		if (!browser || !uploadInput || typeof DataTransfer === 'undefined') {
 			return;
@@ -351,17 +596,30 @@
 
 	function setSelectedUploadFiles(files: File[]) {
 		selectedUploadFiles = files.filter((file) => file.size > 0);
+		uploadPageSelectionById = Object.fromEntries(
+			selectedUploadFiles.map((file, index) => {
+				const progressItemId = getUploadProgressItemId(file, index);
+
+				return [progressItemId, uploadPageSelectionById[progressItemId] ?? ''];
+			})
+		);
 		uploadProgressItems = selectedUploadFiles.map((file, index) => ({
 			id: getUploadProgressItemId(file, index),
 			fileName: file.name,
 			progress: 0,
 			status: 'pending'
 		}));
+		void refreshPdfPageMetadata(selectedUploadFiles);
 	}
 
 	function clearSelectedUploadFiles() {
+		pdfMetadataRequestToken += 1;
 		selectedUploadFiles = [];
+		uploadPageSelectionById = {};
 		uploadProgressItems = [];
+		pdfPageCountById = {};
+		pdfPageCountErrorById = {};
+		pendingPdfPageCountById = {};
 
 		if (uploadInput) {
 			uploadInput.value = '';
@@ -683,6 +941,14 @@
 			return;
 		}
 
+		const uploadValidationMessage = getUploadValidationMessage();
+
+		if (uploadValidationMessage) {
+			feedbackMessage = uploadValidationMessage;
+			isFeedbackError = true;
+			return;
+		}
+
 		isUploading = true;
 		feedbackMessage = '';
 		isFeedbackError = false;
@@ -708,11 +974,23 @@
 				uploads: PreparedUpload[];
 			};
 
-			uploads = prepareBody.uploads ?? [];
+			const preparedUploads = prepareBody.uploads ?? [];
 
-			if (uploads.length !== files.length) {
+			if (preparedUploads.length !== files.length) {
 				throw new Error('Could not confirm an upload plan for every selected file.');
 			}
+
+			uploads = preparedUploads.map((upload, index) => {
+				const file = files[index];
+
+				return {
+					...upload,
+					pageSelection:
+						file && isPdfFile(file)
+							? getUploadPageSelection(getUploadProgressItemId(file, index)).trim() || undefined
+							: undefined
+				};
+			});
 
 			for (const [index, upload] of uploads.entries()) {
 				const file = files[index];
@@ -925,7 +1203,8 @@
 							<h2 class="text-2xl font-semibold tracking-tight">Upload notes</h2>
 							<p class="max-w-xl text-sm leading-6 text-muted-foreground">
 								Drop PDF or image files here or browse manually. Tune Bit uploads them directly to
-								private storage, then refreshes this song in place.
+								private storage, then refreshes this song in place. For PDFs, you can leave pages
+								blank to upload everything or enter ranges like 5-10 and 2,3,4.
 							</p>
 						</div>
 						<Button type="button" variant="ghost" onclick={closeUploadModal}>Close</Button>
@@ -969,12 +1248,60 @@
 							</div>
 						</div>
 
-						{#if uploadFiles.length > 0}
-							<div class="rounded-2xl border px-4 py-4">
+						{#if selectedUploadEntries.length > 0}
+							<div class="space-y-4 rounded-2xl border px-4 py-4">
 								<p class="text-sm font-medium">Ready to upload</p>
-								<div class="mt-3 flex flex-wrap gap-2">
-									{#each uploadFiles as fileName, index (`${fileName}-${index}`)}
-										<Badge variant="outline">{fileName}</Badge>
+								<div class="space-y-3">
+									{#each selectedUploadEntries as { file, progressItemId } (progressItemId)}
+										<div class="rounded-2xl border border-border/70 px-4 py-4">
+											<div class="flex flex-wrap items-start justify-between gap-3">
+												<div class="min-w-0 space-y-2">
+													<p class="font-medium break-all">{file.name}</p>
+													<div class="flex flex-wrap items-center gap-2">
+														<Badge variant="outline">
+															{isPdfFile(file) ? 'PDF' : 'Image'}
+														</Badge>
+														{#if isPdfFile(file) && typeof pdfPageCountById[progressItemId] === 'number'}
+															<span class="text-sm text-muted-foreground">
+																{pdfPageCountById[progressItemId]} total pages
+															</span>
+														{/if}
+													</div>
+												</div>
+											</div>
+
+											{#if isPdfFile(file)}
+												<div class="mt-4 space-y-2">
+													<label
+														class="text-sm font-medium"
+														for={`page-selection-${progressItemId}`}
+													>
+														Pages to include
+													</label>
+													<Input
+														id={`page-selection-${progressItemId}`}
+														maxlength={120}
+														placeholder="All pages, 5-10, or 2,3,4"
+														value={getUploadPageSelection(progressItemId)}
+														disabled={isUploading}
+														oninput={(event) =>
+															updateUploadPageSelection(
+																progressItemId,
+																(event.currentTarget as HTMLInputElement).value
+															)}
+													/>
+													<p
+														class={`text-sm ${getUploadPageSelectionError(file, progressItemId) ? 'text-destructive' : 'text-muted-foreground'}`}
+													>
+														{getUploadPageSelectionMessage(file, progressItemId)}
+													</p>
+												</div>
+											{:else}
+												<p class="mt-4 text-sm text-muted-foreground">
+													{getUploadPageSelectionMessage(file, progressItemId)}
+												</p>
+											{/if}
+										</div>
 									{/each}
 								</div>
 							</div>
@@ -1013,8 +1340,12 @@
 
 						<div class="flex flex-wrap items-center justify-end gap-3">
 							<Button type="button" variant="outline" onclick={closeUploadModal}>Cancel</Button>
-							<Button type="submit" disabled={isUploading}>
-								{isUploading ? 'Uploading files…' : 'Upload files'}
+							<Button type="submit" disabled={isUploadSubmitDisabled}>
+								{isUploading
+									? 'Uploading files…'
+									: hasPendingPdfPageCounts
+										? 'Reading PDFs…'
+										: 'Upload files'}
 							</Button>
 						</div>
 					</form>

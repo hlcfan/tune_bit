@@ -9,6 +9,7 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { PDFDocument } from 'pdf-lib';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { getStorageEnvironment } from '$lib/server/environment.js';
+import { parseSelectedPageNumbers } from '$lib/utils.js';
 
 const STORAGE_PROVIDER = 'cloudflare-r2';
 const ACCEPTED_MIME_TYPES = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'] as const;
@@ -36,6 +37,7 @@ export type PreparedUpload = {
 	signedUploadUrl: string;
 	storageKey: string;
 	uploadHeaders: Record<string, string>;
+	pageSelection?: string;
 };
 
 type DeleteStoredSongNoteFileInput = {
@@ -173,6 +175,28 @@ function getSongStoragePrefix(userId: string, songId: string) {
 	const dateSegment = now.toISOString().slice(0, 10);
 
 	return `users/${userId}/songs/${songId}/${dateSegment}`;
+}
+
+function getAllPageNumbers(pageCount: number) {
+	return Array.from({ length: pageCount }, (_, pageIndex) => pageIndex + 1);
+}
+
+function getSelectedPageNumbers(
+	pageSelection: string | undefined,
+	mimeType: AcceptedMimeType,
+	pageCount: number
+) {
+	if (mimeType !== 'application/pdf') {
+		if (pageSelection) {
+			throw new Error('Page selection is only available for PDF uploads.');
+		}
+
+		return [1];
+	}
+
+	return (
+		parseSelectedPageNumbers(pageSelection ?? '', { pageCount }) ?? getAllPageNumbers(pageCount)
+	);
 }
 
 function buildStorageKey(userId: string, songId: string, fileName: string) {
@@ -384,6 +408,10 @@ export function normalizePreparedUploads(value: unknown): PreparedUpload[] {
 			'storageKey' in upload && typeof upload.storageKey === 'string'
 				? upload.storageKey.trim()
 				: '';
+		const pageSelection =
+			'pageSelection' in upload && typeof upload.pageSelection === 'string'
+				? upload.pageSelection.trim()
+				: '';
 		const uploadHeaders =
 			'uploadHeaders' in upload &&
 			upload.uploadHeaders &&
@@ -403,7 +431,8 @@ export function normalizePreparedUploads(value: unknown): PreparedUpload[] {
 						mimeType: mimeType as AcceptedMimeType,
 						signedUploadUrl,
 						storageKey,
-						uploadHeaders
+						uploadHeaders,
+						pageSelection: pageSelection || undefined
 					}
 				]
 			: [];
@@ -546,6 +575,7 @@ export async function finalizeUploadedSongFiles({
 			const fileBytes =
 				mimeType === 'application/pdf' ? await getUploadedObjectBytes(upload.storageKey) : null;
 			const pageCount = fileBytes ? await getPageCount(fileBytes, mimeType) : 1;
+			const selectedPageNumbers = getSelectedPageNumbers(upload.pageSelection, mimeType, pageCount);
 
 			if (!fileBytes) {
 				await assertUploadedObjectExists(upload.storageKey);
@@ -560,7 +590,7 @@ export async function finalizeUploadedSongFiles({
 					storage_key: upload.storageKey,
 					original_filename: upload.originalFilename,
 					mime_type: mimeType,
-					page_count: pageCount
+					page_count: selectedPageNumbers.length
 				})
 				.select('id')
 				.single();
@@ -571,11 +601,11 @@ export async function finalizeUploadedSongFiles({
 
 			insertedNoteFileIds.push(insertedNoteFile.id);
 
-			const notePages = Array.from({ length: pageCount }, (_, pageIndex) => ({
+			const notePages = selectedPageNumbers.map((pageNumber, pageIndex) => ({
 				user_id: userId,
 				song_id: songId,
 				note_file_id: insertedNoteFile.id,
-				page_number: pageIndex + 1,
+				page_number: pageNumber,
 				sort_order: nextSortOrder + pageIndex,
 				preview_key: null
 			}));
@@ -586,8 +616,8 @@ export async function finalizeUploadedSongFiles({
 				throw new Error('Could not save the uploaded page order.');
 			}
 
-			nextSortOrder += pageCount;
-			totalPageCount += pageCount;
+			nextSortOrder += selectedPageNumbers.length;
+			totalPageCount += selectedPageNumbers.length;
 		}
 
 		await supabase
