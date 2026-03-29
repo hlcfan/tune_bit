@@ -165,6 +165,7 @@
 - Simplified the floating signed-in menu into an avatar-only trigger, anchored its popup above the avatar, and hid it while the song viewer is in focus mode.
 - Added left-arrow and right-arrow shortcuts in song focus mode so readers can move to the previous or next song in the same collection without leaving the full-screen viewer.
 - Updated protected note-file responses to use long-lived private browser caching with cookie variance, and cleared cached note assets on sign-out so repeat viewing avoids unnecessary R2 fetches without leaking across sessions.
+- Extended left-arrow and right-arrow song switching to the standard song page while suppressing it when upload or delete dialogs are open.
 
 ### Next Recommended Slice
 

@@ -269,13 +269,13 @@
 				return;
 			}
 
-			if (isFocusMode && event.key === 'ArrowLeft') {
+			if (event.key === 'ArrowLeft') {
 				event.preventDefault();
 				void navigateToSiblingSong('previous');
 				return;
 			}
 
-			if (isFocusMode && event.key === 'ArrowRight') {
+			if (event.key === 'ArrowRight') {
 				event.preventDefault();
 				void navigateToSiblingSong('next');
 				return;
@@ -548,6 +548,10 @@
 
 	async function navigateToSiblingSong(direction: 'previous' | 'next') {
 		if (!browser || isChangingSong) {
+			return;
+		}
+
+		if (uploadDialog?.open || deleteNoteDialog?.open) {
 			return;
 		}
 
