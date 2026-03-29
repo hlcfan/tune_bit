@@ -836,7 +836,7 @@
 		{#if !isFocusMode}
 			<dialog
 				bind:this={uploadDialog}
-				class="w-full max-w-2xl rounded-3xl border bg-background p-0 text-foreground shadow-2xl backdrop:bg-background/70"
+				class="m-auto w-full max-w-2xl rounded-3xl border bg-background p-0 text-foreground shadow-2xl backdrop:bg-background/70"
 			>
 				<div class="space-y-6 p-6">
 					<div class="flex items-start justify-between gap-4">
