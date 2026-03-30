@@ -166,7 +166,7 @@
 	{/if}
 
 	<section class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
-		<Card class="border-border/70">
+		<Card class="overflow-visible border-border/70">
 			<CardHeader class="space-y-2">
 				<CardTitle>Songs</CardTitle>
 				<CardDescription>
