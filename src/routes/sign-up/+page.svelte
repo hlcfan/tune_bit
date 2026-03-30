@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import { Button } from '$lib/components/ui/button/index.js';
-	import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card/index.js';
+	import { Card, CardContent, CardHeader } from '$lib/components/ui/card/index.js';
 	import { Input } from '$lib/components/ui/input/index.js';
 	import { Label } from '$lib/components/ui/label/index.js';
 	import { cn } from '$lib/utils.js';
@@ -11,20 +11,20 @@
 	const redirectsToLibrary = $derived(data.redirectTo === '/home');
 	const submittedEmail = $derived(form && 'email' in form ? form.email : '');
 	const isSuccess = $derived(Boolean(form && 'success' in form && form.success));
+	const title = 'Tune Bit | Sign Up';
+	const description =
+		'Create a Tune Bit account to start a private sheet music library for collections, songs, and note uploads.';
 </script>
 
 <svelte:head>
-	<title>Tune Bit | Sign Up</title>
-	<meta
-		name="description"
-		content="Create a Tune Bit account to build a private online note library for collections, songs, and uploads."
-	/>
+	<title>{title}</title>
+	<meta name="description" content={description} />
 </svelte:head>
 
 <div class="mx-auto w-full max-w-lg">
 	<Card class="border-border/60 shadow-xs">
 		<CardHeader class="space-y-5 px-6 pt-7 sm:px-7">
-			<CardTitle class="text-3xl tracking-tight">Create your account</CardTitle>
+			<h1 class="text-3xl font-medium tracking-tight">Create your account</h1>
 			<p class="text-sm leading-7 text-muted-foreground">
 				Start your private library with an email and password.
 			</p>

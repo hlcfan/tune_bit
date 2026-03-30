@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import { Button } from '$lib/components/ui/button/index.js';
-	import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card/index.js';
+	import { Card, CardContent, CardHeader } from '$lib/components/ui/card/index.js';
 	import { Input } from '$lib/components/ui/input/index.js';
 	import { Label } from '$lib/components/ui/label/index.js';
 
@@ -9,20 +9,20 @@
 
 	const redirectsToLibrary = $derived(data.redirectTo === '/home');
 	const submittedEmail = $derived(form && 'email' in form ? form.email : '');
+	const title = 'Tune Bit | Sign In';
+	const description =
+		'Sign in to Tune Bit to open your private sheet music library, collections, songs, and note files.';
 </script>
 
 <svelte:head>
-	<title>Tune Bit | Sign In</title>
-	<meta
-		name="description"
-		content="Sign in to Tune Bit to access your private collections, songs, and note files."
-	/>
+	<title>{title}</title>
+	<meta name="description" content={description} />
 </svelte:head>
 
 <div class="mx-auto w-full max-w-lg">
 	<Card class="border-border/60 shadow-xs">
 		<CardHeader class="space-y-5 px-6 pt-7 sm:px-7">
-			<CardTitle class="text-3xl tracking-tight">Sign in</CardTitle>
+			<h1 class="text-3xl font-medium tracking-tight">Sign in</h1>
 			<p class="text-sm leading-7 text-muted-foreground">Pick up where you left off.</p>
 			{#if !redirectsToLibrary}
 				<p class="text-sm leading-7 text-muted-foreground">

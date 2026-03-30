@@ -13,15 +13,18 @@
 	const isAuthenticatedAppRoute = $derived(
 		page.route.id?.startsWith('/app') || page.route.id?.startsWith('/home') || false
 	);
+	const canonicalUrl = $derived(new URL(page.url.pathname, page.url.origin).toString());
+	const isNonIndexableRoute = $derived(
+		isAuthenticatedAppRoute || page.route.id === '/sign-in' || page.route.id === '/sign-up'
+	);
 </script>
 
 <svelte:head>
 	<link rel="icon" href={favicon} />
-	<title>Tune Bit</title>
-	<meta
-		name="description"
-		content="Tune Bit is a private note library for uploading, organizing, and viewing musical notes by collection and song."
-	/>
+	<link rel="canonical" href={canonicalUrl} />
+	<meta name="application-name" content="Tune Bit" />
+	<meta name="robots" content={isNonIndexableRoute ? 'noindex, nofollow' : 'index, follow'} />
+	<meta property="og:site_name" content="Tune Bit" />
 </svelte:head>
 
 <div class="min-h-screen bg-background">

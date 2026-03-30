@@ -1,8 +1,13 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
+	import { page } from '$app/state';
 	import { buttonVariants } from '$lib/components/ui/button/index.js';
 
 	let { data } = $props();
+	const title = 'Tune Bit | Private Sheet Music Library';
+	const description =
+		'Tune Bit is a private sheet music library for organizing collections and songs, uploading note files, and reading music without clutter.';
+	const canonicalUrl = $derived(new URL(page.url.pathname, page.url.origin).toString());
 
 	const benefits = [
 		{
@@ -21,11 +26,15 @@
 </script>
 
 <svelte:head>
-	<title>Tune Bit</title>
-	<meta
-		name="description"
-		content="Tune Bit is a private place to organize collections and songs, upload note files, and read music without clutter."
-	/>
+	<title>{title}</title>
+	<meta name="description" content={description} />
+	<meta property="og:type" content="website" />
+	<meta property="og:url" content={canonicalUrl} />
+	<meta property="og:title" content={title} />
+	<meta property="og:description" content={description} />
+	<meta name="twitter:card" content="summary" />
+	<meta name="twitter:title" content={title} />
+	<meta name="twitter:description" content={description} />
 </svelte:head>
 
 <div class="space-y-24">

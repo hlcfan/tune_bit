@@ -83,6 +83,7 @@
 ### 7. Hardening and QA
 
 - [x] Validate auth protections
+- [x] Harden SEO metadata and crawler directives for public and private routes
 - [ ] Validate RLS protections
 - [x] Validate upload reliability
 - [ ] Validate page ordering
@@ -184,6 +185,7 @@
 - Polished public-page copy tone and spacing to feel quieter and closer to the HEY/Basecamp style without changing the simplified page structure.
 - Tightened the public-page voice and spacing again after reviewing Basecamp, using more direct problem-solution copy and clearer section titles while keeping the simplified structure intact.
 - Removed the extra "Back to overview" links from the auth forms so the pages stay focused on signing in or creating an account.
+- Hardened page-level SEO by adding canonical URLs and richer landing-page share metadata, while marking private and auth routes as non-indexable in both page metadata and robots rules.
 
 ### Next Recommended Slice
 

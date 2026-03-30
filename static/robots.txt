@@ -1,3 +1,7 @@
-# allow crawling everything by default
 User-agent: *
-Disallow:
+Allow: /
+Disallow: /app
+Disallow: /home
+Disallow: /sign-in
+Disallow: /sign-up
+Disallow: /auth
