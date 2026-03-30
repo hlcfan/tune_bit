@@ -70,7 +70,6 @@
 			<a class={buttonVariants({ variant: 'outline' })} href={resolve('/app/songs/new')}>
 				Add New Song
 			</a>
-			<a class={buttonVariants({ variant: 'ghost' })} href={resolve('/')}>Public overview</a>
 		</div>
 	</section>
 
