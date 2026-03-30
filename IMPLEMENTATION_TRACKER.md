@@ -187,6 +187,7 @@
 - Removed the extra "Back to overview" links from the auth forms so the pages stay focused on signing in or creating an account.
 - Hardened page-level SEO by adding canonical URLs and richer landing-page share metadata, while marking private and auth routes as non-indexable in both page metadata and robots rules.
 - Added the collection index row actions menu so each collection can be renamed or deleted from the same three-dots control pattern used elsewhere in the app.
+- Made collection row menus, song row menus, and the floating avatar menu dismiss when users click outside their popovers while preserving the existing click-to-toggle behavior.
 
 ### Next Recommended Slice
 

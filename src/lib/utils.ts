@@ -5,6 +5,27 @@ export function cn(...inputs: ClassValue[]) {
 	return twMerge(clsx(inputs));
 }
 
+export function clickOutside(node: HTMLElement, callback: () => void) {
+	const handlePointerDown = (event: PointerEvent) => {
+		if (!(event.target instanceof Node) || node.contains(event.target)) {
+			return;
+		}
+
+		callback();
+	};
+
+	document.addEventListener('pointerdown', handlePointerDown, true);
+
+	return {
+		update(nextCallback: () => void) {
+			callback = nextCallback;
+		},
+		destroy() {
+			document.removeEventListener('pointerdown', handlePointerDown, true);
+		}
+	};
+}
+
 type PageSelectionOptions = {
 	pageCount?: number;
 };

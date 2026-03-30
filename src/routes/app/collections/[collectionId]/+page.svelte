@@ -4,6 +4,7 @@
 	import FeedbackFlash from '$lib/components/feedback-flash.svelte';
 	import { Badge } from '$lib/components/ui/badge/index.js';
 	import { Button, buttonVariants } from '$lib/components/ui/button/index.js';
+	import { clickOutside } from '$lib/utils.js';
 	import {
 		Card,
 		CardContent,
@@ -220,7 +221,14 @@
 										</p>
 									</div>
 
-									<div class="pointer-events-auto relative z-20 shrink-0">
+									<div
+										class="pointer-events-auto relative z-20 shrink-0"
+										use:clickOutside={() => {
+											if (activeSongMenuId === song.id) {
+												closeSongMenu();
+											}
+										}}
+									>
 										<Button
 											class="cursor-pointer"
 											type="button"

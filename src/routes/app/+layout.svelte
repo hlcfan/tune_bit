@@ -3,9 +3,11 @@
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import { buttonVariants } from '$lib/components/ui/button/index.js';
+	import { clickOutside } from '$lib/utils.js';
 	import { onMount } from 'svelte';
 
 	let { children, data } = $props();
+	let accountMenu = $state<HTMLDetailsElement | null>(null);
 	let isSongFocusMode = $state(false);
 
 	const emailLabel = $derived(data.user?.email ?? 'Library menu');
@@ -38,7 +40,15 @@
 	</main>
 
 	{#if !shouldHideFloatingMenu}
-		<details class="fixed bottom-4 left-4 z-40 [&_summary::-webkit-details-marker]:hidden">
+		<details
+			bind:this={accountMenu}
+			class="fixed bottom-4 left-4 z-40 [&_summary::-webkit-details-marker]:hidden"
+			use:clickOutside={() => {
+				if (accountMenu?.open) {
+					accountMenu.open = false;
+				}
+			}}
+		>
 			<div
 				class="absolute bottom-full left-0 mb-3 w-64 rounded-3xl border border-border/70 bg-background/95 p-2 shadow-2xl backdrop-blur"
 			>

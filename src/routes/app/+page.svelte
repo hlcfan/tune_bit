@@ -4,6 +4,7 @@
 	import FeedbackFlash from '$lib/components/feedback-flash.svelte';
 	import { Badge } from '$lib/components/ui/badge/index.js';
 	import { Button, buttonVariants } from '$lib/components/ui/button/index.js';
+	import { clickOutside } from '$lib/utils.js';
 	import {
 		Card,
 		CardContent,
@@ -219,7 +220,14 @@
 											Add song
 										</Button>
 									</form>
-									<div class="relative z-20 shrink-0">
+									<div
+										class="relative z-20 shrink-0"
+										use:clickOutside={() => {
+											if (activeCollectionMenuId === collection.id) {
+												closeCollectionMenu();
+											}
+										}}
+									>
 										<Button
 											class="cursor-pointer"
 											type="button"
