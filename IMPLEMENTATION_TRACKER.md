@@ -15,6 +15,7 @@
 - [x] Upload pipeline and storage
 - [x] Note viewer
 - [x] Simplified authenticated UI
+- [x] Simplified public landing and auth UI
 - [~] Hardening and QA
 
 ## Milestone Checklist
@@ -100,6 +101,13 @@
 - [x] Keep the song note list and viewer on one screen
 - [x] Move song uploads into a song-page modal
 
+### 9. Simplified Public Landing and Auth UI
+
+- [x] Simplify the shared public shell
+- [x] Reduce the landing page to a focused product promise
+- [x] Simplify the sign-in page into a single-panel form
+- [x] Simplify the sign-up page into a single-panel form
+
 ## Implementation Notes
 
 ### Architecture Guardrails
@@ -172,6 +180,7 @@
 - Changed the empty song page so the inline drag-and-drop upload area appears immediately instead of requiring an Upload Notes button and modal first.
 - Added dismissible flash notifications with automatic fade-out across collection, song, and add-song screens plus the focus-mode viewer.
 - Changed the default post-auth landing route from /app to /home and added a protected /home alias for the collections index.
+- Simplified the public shell, landing page, sign-in page, and sign-up page to better match the calm, minimal 37signals-inspired direction in the PRD.
 
 ### Next Recommended Slice
 

@@ -1,15 +1,7 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import { Badge } from '$lib/components/ui/badge/index.js';
-	import { Button, buttonVariants } from '$lib/components/ui/button/index.js';
-	import {
-		Card,
-		CardContent,
-		CardDescription,
-		CardFooter,
-		CardHeader,
-		CardTitle
-	} from '$lib/components/ui/card/index.js';
+	import { Button } from '$lib/components/ui/button/index.js';
+	import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card/index.js';
 	import { Input } from '$lib/components/ui/input/index.js';
 	import { Label } from '$lib/components/ui/label/index.js';
 	import { cn } from '$lib/utils.js';
@@ -29,52 +21,20 @@
 	/>
 </svelte:head>
 
-<div class="mx-auto grid max-w-5xl gap-6 lg:grid-cols-[1.05fr_0.95fr]">
-	<Card class="border-border/70 bg-card/90">
-		<CardHeader class="space-y-4">
-			<Badge variant="outline" class="w-fit">Private account setup</Badge>
-			<div class="space-y-3">
-				<CardTitle class="max-w-2xl text-4xl leading-tight font-semibold tracking-tight">
-					Create your Tune Bit library account.
-				</CardTitle>
-				<CardDescription class="max-w-xl text-base leading-7">
-					Phase 2 adds the authenticated foundation that every later collection, song, upload, and
-					viewer flow will build on.
-				</CardDescription>
-			</div>
-		</CardHeader>
-		<CardContent class="space-y-4">
-			<div class="grid gap-4 sm:grid-cols-2">
-				<div class="rounded-2xl border border-dashed px-4 py-4">
-					<p class="text-sm text-muted-foreground">Ownership model</p>
-					<p class="mt-2 font-medium">
-						Each future collection and song will be scoped to your user id.
-					</p>
-				</div>
-				<div class="rounded-2xl border border-dashed px-4 py-4">
-					<p class="text-sm text-muted-foreground">Protected routes</p>
-					<p class="mt-2 font-medium">The library shell only opens once a valid session exists.</p>
-				</div>
-			</div>
-			<div class="rounded-2xl border px-4 py-4">
-				<p class="text-sm text-muted-foreground">After sign-up</p>
-				<p class="mt-2 font-medium">
-					{redirectsToLibrary
-						? 'Successful account creation continues into the protected app area when a session is returned.'
-						: data.redirectTo}
+<div class="mx-auto max-w-md">
+	<Card class="border-border/70 shadow-xs">
+		<CardHeader class="space-y-3">
+			<CardTitle class="text-3xl tracking-tight">Create your account</CardTitle>
+			<p class="text-sm leading-6 text-muted-foreground">
+				Set up your private library with your email and password.
+			</p>
+			{#if !redirectsToLibrary}
+				<p class="text-sm leading-6 text-muted-foreground">
+					After sign-up, you&apos;ll continue to {data.redirectTo}.
 				</p>
-			</div>
-		</CardContent>
-	</Card>
-
-	<Card class="border-border/70">
-		<CardHeader>
-			<CardTitle>Start with email and password</CardTitle>
-			<CardDescription>
-				Use a valid email address and a password with at least 8 characters.
-			</CardDescription>
+			{/if}
 		</CardHeader>
-		<CardContent>
+		<CardContent class="space-y-6">
 			<form method="POST" class="space-y-4">
 				<div class="space-y-2">
 					<Label for="email">Email</Label>
@@ -98,6 +58,7 @@
 						required
 					/>
 				</div>
+				<p class="text-sm leading-6 text-muted-foreground">Use at least 8 characters.</p>
 				{#if form?.message}
 					<p
 						class={cn(
@@ -112,15 +73,21 @@
 				{/if}
 				<Button class="w-full" type="submit">Create account</Button>
 			</form>
-		</CardContent>
-		<CardFooter class="flex flex-col items-start gap-3 text-sm text-muted-foreground">
-			<p>
-				Already have an account?
-				<a class="text-foreground underline underline-offset-4" href={resolve('/sign-in')}>
-					Sign in here
+
+			<div class="space-y-3 text-sm text-muted-foreground">
+				<p>
+					Already have an account?
+					<a class="text-foreground underline underline-offset-4" href={resolve('/sign-in')}>
+						Sign in here
+					</a>
+				</p>
+				<a
+					class="inline-flex text-muted-foreground transition-colors hover:text-foreground"
+					href={resolve('/')}
+				>
+					Back to overview
 				</a>
-			</p>
-			<a class={buttonVariants({ variant: 'ghost' })} href={resolve('/')}>Back to overview</a>
-		</CardFooter>
+			</div>
+		</CardContent>
 	</Card>
 </div>
