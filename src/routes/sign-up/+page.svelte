@@ -21,9 +21,9 @@
 	/>
 </svelte:head>
 
-<div class="mx-auto max-w-md">
+<div class="mx-auto w-full max-w-lg">
 	<Card class="border-border/60 shadow-xs">
-		<CardHeader class="space-y-5 px-6 pt-7">
+		<CardHeader class="space-y-5 px-6 pt-7 sm:px-7">
 			<CardTitle class="text-3xl tracking-tight">Create your account</CardTitle>
 			<p class="text-sm leading-7 text-muted-foreground">
 				Start your private library with an email and password.
@@ -34,7 +34,7 @@
 				</p>
 			{/if}
 		</CardHeader>
-		<CardContent class="space-y-8 px-6 pb-6">
+		<CardContent class="space-y-8 px-6 pb-6 sm:px-7 sm:pb-7">
 			<form method="POST" class="space-y-6">
 				<div class="space-y-2">
 					<Label for="email">Email</Label>
