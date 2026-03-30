@@ -1,9 +1,12 @@
 <script lang="ts">
 	import './layout.css';
+	import { injectSpeedInsights } from '@vercel/speed-insights/sveltekit';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import favicon from '$lib/assets/favicon.svg';
 	import { buttonVariants } from '$lib/components/ui/button/index.js';
+
+	injectSpeedInsights();
 
 	let { children, data } = $props();
 
