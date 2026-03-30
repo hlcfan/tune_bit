@@ -63,19 +63,13 @@
 				<Button class="w-full" type="submit">Sign in</Button>
 			</form>
 
-			<div class="space-y-3 pt-1 text-sm text-muted-foreground">
+			<div class="pt-1 text-sm text-muted-foreground">
 				<p>
 					Need an account?
 					<a class="text-foreground underline underline-offset-4" href={resolve('/sign-up')}>
 						Create one
 					</a>
 				</p>
-				<a
-					class="inline-flex text-muted-foreground transition-colors hover:text-foreground"
-					href={resolve('/')}
-				>
-					Back to overview
-				</a>
 			</div>
 		</CardContent>
 	</Card>

@@ -183,6 +183,7 @@
 - Simplified the public shell, landing page, sign-in page, and sign-up page to better match the calm, minimal 37signals-inspired direction in the PRD.
 - Polished public-page copy tone and spacing to feel quieter and closer to the HEY/Basecamp style without changing the simplified page structure.
 - Tightened the public-page voice and spacing again after reviewing Basecamp, using more direct problem-solution copy and clearer section titles while keeping the simplified structure intact.
+- Removed the extra "Back to overview" links from the auth forms so the pages stay focused on signing in or creating an account.
 
 ### Next Recommended Slice
 
