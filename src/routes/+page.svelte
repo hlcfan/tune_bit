@@ -119,7 +119,7 @@
 
 				<div class="flex flex-col gap-3 sm:flex-row">
 					{#if data.user}
-						<a class={buttonVariants({})} href={resolve('/app')}>Open protected app</a>
+						<a class={buttonVariants({})} href={resolve('/home')}>Open protected app</a>
 					{:else}
 						<a class={buttonVariants({})} href={resolve('/sign-up')}>Create an account</a>
 						<a class={buttonVariants({ variant: 'outline' })} href={resolve('/sign-in')}>

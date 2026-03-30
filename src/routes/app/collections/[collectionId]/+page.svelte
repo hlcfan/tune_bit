@@ -19,7 +19,7 @@
 	let activeSongId = $state<string | null>(null);
 	let activeSongMenuId = $state<string | null>(null);
 
-	const libraryPath = resolve('/app');
+	const libraryPath = resolve('/home');
 	const renameCollectionName = $derived(
 		form?.intent === 'renameCollection' && 'name' in form ? form.name : data.collection.name
 	);

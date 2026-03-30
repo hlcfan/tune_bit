@@ -7,7 +7,9 @@
 
 	let { children, data } = $props();
 
-	const isAuthenticatedAppRoute = $derived(page.route.id?.startsWith('/app') ?? false);
+	const isAuthenticatedAppRoute = $derived(
+		page.route.id?.startsWith('/app') || page.route.id?.startsWith('/home') || false
+	);
 </script>
 
 <svelte:head>
@@ -47,7 +49,7 @@
 						{#if data.user}
 							<a
 								class="rounded-full px-3 py-2 text-muted-foreground transition-colors hover:text-foreground"
-								href={resolve('/app')}
+								href={resolve('/home')}
 							>
 								Library
 							</a>

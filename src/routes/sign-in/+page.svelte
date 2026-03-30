@@ -15,7 +15,7 @@
 
 	let { data, form } = $props();
 
-	const redirectsToLibrary = $derived(data.redirectTo === '/app');
+	const redirectsToLibrary = $derived(data.redirectTo === '/home');
 	const submittedEmail = $derived(form && 'email' in form ? form.email : '');
 </script>
 

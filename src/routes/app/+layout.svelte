@@ -46,7 +46,7 @@
 				<div class="space-y-1">
 					<a
 						class={`${buttonVariants({ variant: 'ghost' })} w-full justify-start`}
-						href={resolve('/app')}
+						href={resolve('/home')}
 					>
 						Collections
 					</a>

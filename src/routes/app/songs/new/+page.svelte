@@ -455,7 +455,7 @@
 						Back
 					</a>
 				{:else}
-					<a class={buttonVariants({ variant: 'outline' })} href={resolve('/app')}>Back</a>
+					<a class={buttonVariants({ variant: 'outline' })} href={resolve('/home')}>Back</a>
 				{/if}
 				<Badge variant="outline">Add a song</Badge>
 				{#if collections.length > 0}

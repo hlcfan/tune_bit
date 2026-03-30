@@ -171,6 +171,7 @@
 - Added optional PDF page selection during song uploads so users can upload all pages, explicit page lists, or page ranges from a single PDF.
 - Changed the empty song page so the inline drag-and-drop upload area appears immediately instead of requiring an Upload Notes button and modal first.
 - Added dismissible flash notifications with automatic fade-out across collection, song, and add-song screens plus the focus-mode viewer.
+- Changed the default post-auth landing route from /app to /home and added a protected /home alias for the collections index.
 
 ### Next Recommended Slice
 

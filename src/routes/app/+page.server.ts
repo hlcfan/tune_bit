@@ -1,6 +1,6 @@
 import { error, fail, redirect } from '@sveltejs/kit';
 
-const APP_PATH = '/app';
+const APP_PATH = '/home';
 const MAX_NAME_LENGTH = 200;
 
 type CollectionRow = {

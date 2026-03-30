@@ -1,4 +1,4 @@
-export function normalizeRedirectTo(redirectTo: string | null, fallback = '/app') {
+export function normalizeRedirectTo(redirectTo: string | null, fallback = '/home') {
 	if (!redirectTo?.startsWith('/')) {
 		return fallback;
 	}
