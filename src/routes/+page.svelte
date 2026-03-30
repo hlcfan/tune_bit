@@ -40,13 +40,15 @@
 <div class="space-y-24">
 	<section class="mx-auto max-w-4xl space-y-12">
 		<div class="space-y-7">
-			<p class="text-sm font-medium tracking-wide text-muted-foreground">Tune Bit</p>
+			<p class="text-sm font-medium tracking-wide text-muted-foreground">
+				Private sheet music library
+			</p>
 			<h1 class="max-w-3xl text-4xl leading-[1.02] font-semibold tracking-tight sm:text-5xl">
 				Sheet music gets scattered fast. It doesn&apos;t have to.
 			</h1>
 			<p class="max-w-2xl text-[1.05rem] leading-8 text-muted-foreground sm:text-[1.1rem]">
-				Tune Bit keeps collections, songs, PDFs, and note pages in one calm, private place so you
-				can open what you need and get on with playing.
+				Keep collections, songs, PDFs, and note pages in one calm, private place so you can open
+				what you need and get on with playing.
 			</p>
 		</div>
 
