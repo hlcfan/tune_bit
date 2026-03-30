@@ -190,6 +190,7 @@
 - Made collection row menus, song row menus, and the floating avatar menu dismiss when users click outside their popovers while preserving the existing click-to-toggle behavior.
 - Stopped the collection show page song actions menu from being clipped by the songs card so the full popover remains visible near the bottom of the list.
 - Matched the same overflow fix on the collections index card so collection row action menus are not clipped there either.
+- Replaced the default Svelte favicon with a custom Tune Bit mark that combines a music note, staff lines, and a subtle digital accent.
 
 ### Next Recommended Slice
 
