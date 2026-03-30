@@ -5,9 +5,18 @@
 	let { data } = $props();
 
 	const benefits = [
-		'Keep collections and songs together in a private library.',
-		'Upload PDFs or images without adding clutter to the workflow.',
-		'Read notes in a calm viewer built for quick scanning and focus.'
+		{
+			title: 'Everything stays together',
+			body: 'Collections, songs, PDFs, and note pages live in one tidy place, so you spend less time hunting.'
+		},
+		{
+			title: 'Uploads stay simple',
+			body: 'Bring in images or PDFs, sort them into the right song, and move on without extra setup.'
+		},
+		{
+			title: 'Reading stays clear',
+			body: 'Open the notes, adjust the view, and focus on the music instead of the interface.'
+		}
 	];
 </script>
 
@@ -19,20 +28,20 @@
 	/>
 </svelte:head>
 
-<div class="space-y-16">
-	<section class="mx-auto max-w-4xl space-y-8">
-		<div class="space-y-5">
-			<p class="text-sm font-medium text-muted-foreground">Tune Bit</p>
-			<h1 class="max-w-3xl text-4xl leading-tight font-semibold tracking-tight sm:text-5xl">
-				A private place for your sheet music and note pages.
+<div class="space-y-24">
+	<section class="mx-auto max-w-4xl space-y-12">
+		<div class="space-y-7">
+			<p class="text-sm font-medium tracking-wide text-muted-foreground">Tune Bit</p>
+			<h1 class="max-w-3xl text-4xl leading-[1.02] font-semibold tracking-tight sm:text-5xl">
+				Sheet music gets scattered fast. It doesn&apos;t have to.
 			</h1>
-			<p class="max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">
-				Keep collections and songs together, upload PDFs or images, and read notes without a busy
-				interface getting in the way.
+			<p class="max-w-2xl text-[1.05rem] leading-8 text-muted-foreground sm:text-[1.1rem]">
+				Tune Bit keeps collections, songs, PDFs, and note pages in one calm, private place so you
+				can open what you need and get on with playing.
 			</p>
 		</div>
 
-		<div class="flex flex-col gap-3 sm:flex-row">
+		<div class="flex flex-col gap-3 pt-2 sm:flex-row">
 			{#if data.user}
 				<a class={buttonVariants({})} href={resolve('/home')}>Open library</a>
 			{:else}
@@ -42,23 +51,24 @@
 		</div>
 	</section>
 
-	<section class="mx-auto max-w-4xl border-t border-border/70 pt-8">
-		<div class="grid gap-6 md:grid-cols-3">
+	<section class="mx-auto max-w-4xl border-t border-border/60 pt-12">
+		<div class="grid gap-10 md:grid-cols-3">
 			{#each benefits as benefit (benefit)}
-				<div class="space-y-2">
-					<p class="text-sm font-medium text-foreground">What Tune Bit helps with</p>
-					<p class="text-sm leading-6 text-muted-foreground">{benefit}</p>
+				<div class="space-y-3">
+					<p class="text-base font-medium tracking-tight text-foreground">{benefit.title}</p>
+					<p class="text-sm leading-7 text-muted-foreground">{benefit.body}</p>
 				</div>
 			{/each}
 		</div>
 	</section>
 
-	<section class="mx-auto max-w-4xl border-t border-border/70 pt-8">
-		<div class="max-w-2xl space-y-3">
+	<section class="mx-auto max-w-4xl border-t border-border/60 pt-12">
+		<div class="max-w-2xl space-y-4">
 			<p class="text-sm font-medium text-foreground">Private by default</p>
-			<p class="text-sm leading-6 text-muted-foreground sm:text-base">
-				Your library opens only after sign-in, so collections, songs, and note files stay tied to
-				your account from the start.
+			<p class="text-sm leading-7 text-muted-foreground sm:text-base">
+				You sign in before you enter the library, and your collections, songs, and note files stay
+				with your account from the start. It&apos;s your space, not a public folder with extra
+				steps.
 			</p>
 		</div>
 	</section>

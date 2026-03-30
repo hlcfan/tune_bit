@@ -20,20 +20,18 @@
 </svelte:head>
 
 <div class="mx-auto max-w-md">
-	<Card class="border-border/70 shadow-xs">
-		<CardHeader class="space-y-3">
+	<Card class="border-border/60 shadow-xs">
+		<CardHeader class="space-y-5 px-6 pt-7">
 			<CardTitle class="text-3xl tracking-tight">Sign in</CardTitle>
-			<p class="text-sm leading-6 text-muted-foreground">
-				Use your email and password to open your library.
-			</p>
+			<p class="text-sm leading-7 text-muted-foreground">Pick up where you left off.</p>
 			{#if !redirectsToLibrary}
-				<p class="text-sm leading-6 text-muted-foreground">
-					After signing in, you&apos;ll continue to {data.redirectTo}.
+				<p class="text-sm leading-7 text-muted-foreground">
+					After you sign in, you&apos;ll head to {data.redirectTo}.
 				</p>
 			{/if}
 		</CardHeader>
-		<CardContent class="space-y-6">
-			<form method="POST" class="space-y-4">
+		<CardContent class="space-y-8 px-6 pb-6">
+			<form method="POST" class="space-y-6">
 				<div class="space-y-2">
 					<Label for="email">Email</Label>
 					<Input
@@ -57,7 +55,7 @@
 				</div>
 				{#if form?.message}
 					<p
-						class="rounded-xl border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive"
+						class="rounded-xl border border-destructive/30 bg-destructive/5 px-3 py-2.5 text-sm leading-6 text-destructive"
 					>
 						{form.message}
 					</p>
@@ -65,11 +63,11 @@
 				<Button class="w-full" type="submit">Sign in</Button>
 			</form>
 
-			<div class="space-y-3 text-sm text-muted-foreground">
+			<div class="space-y-3 pt-1 text-sm text-muted-foreground">
 				<p>
 					Need an account?
 					<a class="text-foreground underline underline-offset-4" href={resolve('/sign-up')}>
-						Create one here
+						Create one
 					</a>
 				</p>
 				<a

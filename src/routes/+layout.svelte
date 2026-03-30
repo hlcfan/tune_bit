@@ -28,9 +28,9 @@
 	{#if isAuthenticatedAppRoute}
 		{@render children()}
 	{:else}
-		<div class="mx-auto flex min-h-screen max-w-6xl flex-col px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
-			<header class="flex items-center justify-between gap-4 border-b border-border/70 pb-5">
-				<a class="text-lg font-semibold tracking-tight text-foreground" href={resolve('/')}
+		<div class="mx-auto flex min-h-screen max-w-6xl flex-col px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
+			<header class="flex items-center justify-between gap-4 border-b border-border/50 pb-7">
+				<a class="text-[1.1rem] font-semibold tracking-tight text-foreground" href={resolve('/')}
 					>Tune Bit</a
 				>
 
@@ -59,12 +59,12 @@
 				</div>
 			</header>
 
-			<main class="flex flex-1 flex-col justify-center py-12 sm:py-16">
+			<main class="flex flex-1 flex-col justify-center py-20 sm:py-24">
 				{@render children()}
 			</main>
 
-			<footer class="border-t border-border/70 pt-5 text-sm text-muted-foreground">
-				<p>A private place for collections, songs, and note pages.</p>
+			<footer class="border-t border-border/50 pt-7 text-sm text-muted-foreground">
+				<p>A calm, private place for collections, songs, and note pages.</p>
 			</footer>
 		</div>
 	{/if}
