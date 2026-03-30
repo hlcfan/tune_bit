@@ -658,14 +658,6 @@
 							</div>
 						</div>
 					{/if}
-
-					<div class="rounded-2xl border px-4 py-4 text-sm text-muted-foreground">
-						<p class="font-medium text-foreground">Upload flow</p>
-						<p class="mt-2 leading-6">
-							Adding files here creates the song first, uploads each file directly to private
-							storage, and then opens the finished song page.
-						</p>
-					</div>
 				</CardContent>
 			</Card>
 		</section>
