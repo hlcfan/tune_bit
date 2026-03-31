@@ -2,7 +2,7 @@
 
 ## Objective
 
-Turn the product scope in [PRD.md](file:///Users/hlcfan/workspace/tune_bit/PRD.md) into an ordered delivery plan that keeps infrastructure, security, and product experience aligned from the start.
+Turn the product scope in [PRD.md](PRD.md) into an ordered delivery plan that keeps infrastructure, security, and product experience aligned from the start.
 
 ## Delivery Principles
 

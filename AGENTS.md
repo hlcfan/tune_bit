@@ -12,7 +12,7 @@
 
 This repository is for Tune Bit, a web app that lets authenticated users upload, organize, and view musical notes online by collection and song.
 
-The current source of truth for product scope is [PRD.md](file:///Users/hlcfan/workspace/tune_bit/PRD.md).
+The current source of truth for product scope is [PRD.md](PRD.md).
 
 ## Required Stack
 
@@ -84,6 +84,6 @@ Do not replace these technologies unless the user explicitly requests it.
 - Prefer editing existing files over creating extra files.
 - Keep markdown docs concise and useful.
 - Validate code changes with the relevant checks available in the repository.
-- Follow [IMPLEMENTATION_PLAN.md](file:///Users/hlcfan/workspace/tune_bit/IMPLEMENTATION_PLAN.md) as the default delivery sequence unless the user asks for a different order.
-- After completing a task, update [IMPLEMENTATION_TRACKER.md](file:///Users/hlcfan/workspace/tune_bit/IMPLEMENTATION_TRACKER.md) so progress stays current.
-- If new product decisions are made, update [PRD.md](file:///Users/hlcfan/workspace/tune_bit/PRD.md) so implementation stays aligned.
+- Follow [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) as the default delivery sequence unless the user asks for a different order.
+- After completing a task, update [IMPLEMENTATION_TRACKER.md](IMPLEMENTATION_TRACKER.md) so progress stays current.
+- If new product decisions are made, update [PRD.md](PRD.md) so implementation stays aligned.

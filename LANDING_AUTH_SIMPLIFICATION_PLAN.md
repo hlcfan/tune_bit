@@ -2,7 +2,7 @@
 
 ## Objective
 
-Simplify the public landing page, sign-in page, and sign-up page so they feel calm, direct, and product-focused, in line with the 37signals-inspired visual direction defined in [PRD.md](file:///Users/hlcfan/workspace/tune_bit/PRD.md#L157-L176).
+Simplify the public landing page, sign-in page, and sign-up page so they feel calm, direct, and product-focused, in line with the 37signals-inspired visual direction defined in [PRD.md](PRD.md#L157-L176).
 
 ## Design Goals
 
@@ -14,9 +14,9 @@ Simplify the public landing page, sign-in page, and sign-up page so they feel ca
 
 ## Current Problems
 
-- The landing page currently mixes product messaging, implementation status, infrastructure details, and roadmap communication in [src/routes/+page.svelte](file:///Users/hlcfan/workspace/tune_bit/src/routes/+page.svelte#L78-L286)
-- The sign-in and sign-up pages split attention between marketing content and form completion in [src/routes/sign-in/+page.svelte](file:///Users/hlcfan/workspace/tune_bit/src/routes/sign-in/+page.svelte#L30-L117) and [src/routes/sign-up/+page.svelte](file:///Users/hlcfan/workspace/tune_bit/src/routes/sign-up/+page.svelte#L32-L125)
-- The public shell includes more navigation and footer messaging than the simplified direction needs in [src/routes/+layout.svelte](file:///Users/hlcfan/workspace/tune_bit/src/routes/+layout.svelte#L31-L101)
+- The landing page currently mixes product messaging, implementation status, infrastructure details, and roadmap communication in [src/routes/+page.svelte](src/routes/+page.svelte#L78-L286)
+- The sign-in and sign-up pages split attention between marketing content and form completion in [src/routes/sign-in/+page.svelte](src/routes/sign-in/+page.svelte#L30-L117) and [src/routes/sign-up/+page.svelte](src/routes/sign-up/+page.svelte#L32-L125)
+- The public shell includes more navigation and footer messaging than the simplified direction needs in [src/routes/+layout.svelte](src/routes/+layout.svelte#L31-L101)
 
 ## Guiding Principles
 
@@ -153,13 +153,13 @@ Reduce chrome around public pages so the page content carries the experience.
 - Prefer large headings and short paragraphs
 - Use soft borders only where structure is needed
 - Keep one obvious primary button per screen
-- Maintain the existing restrained palette from [layout.css](file:///Users/hlcfan/workspace/tune_bit/src/routes/layout.css)
+- Maintain the existing restrained palette from [layout.css](src/routes/layout.css)
 
 ## Implementation Sequence
 
-1. Simplify the shared public layout in [src/routes/+layout.svelte](file:///Users/hlcfan/workspace/tune_bit/src/routes/+layout.svelte#L31-L101)
-2. Rewrite the landing page structure in [src/routes/+page.svelte](file:///Users/hlcfan/workspace/tune_bit/src/routes/+page.svelte#L78-L286)
-3. Unify sign-in and sign-up around one visual pattern in [src/routes/sign-in/+page.svelte](file:///Users/hlcfan/workspace/tune_bit/src/routes/sign-in/+page.svelte#L30-L117) and [src/routes/sign-up/+page.svelte](file:///Users/hlcfan/workspace/tune_bit/src/routes/sign-up/+page.svelte#L32-L125)
+1. Simplify the shared public layout in [src/routes/+layout.svelte](src/routes/+layout.svelte#L31-L101)
+2. Rewrite the landing page structure in [src/routes/+page.svelte](src/routes/+page.svelte#L78-L286)
+3. Unify sign-in and sign-up around one visual pattern in [src/routes/sign-in/+page.svelte](src/routes/sign-in/+page.svelte#L30-L117) and [src/routes/sign-up/+page.svelte](src/routes/sign-up/+page.svelte#L32-L125)
 
 ## Definition of Done
 

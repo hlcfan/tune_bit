@@ -2,7 +2,7 @@
 
 ## Objective
 
-Deliver the simplified authenticated experience defined in [PRD.md](file:///Users/hlcfan/workspace/tune_bit/PRD.md), centered on full-width layouts, minimal navigation, streamlined collection and song creation flows, and an integrated song detail screen.
+Deliver the simplified authenticated experience defined in [PRD.md](PRD.md), centered on full-width layouts, minimal navigation, streamlined collection and song creation flows, and an integrated song detail screen.
 
 ## Scope
 
