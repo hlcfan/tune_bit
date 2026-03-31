@@ -201,7 +201,7 @@
 									})}
 								>
 								</a>
-								<div class="relative z-10 min-w-0 space-y-1">
+								<div class="pointer-events-none relative z-10 min-w-0 space-y-1">
 									<p
 										class="truncate text-lg font-medium tracking-tight transition-colors group-hover:text-primary"
 									>
