@@ -192,6 +192,7 @@
 - Matched the same overflow fix on the collections index card so collection row action menus are not clipped there either.
 - Replaced the default Svelte favicon with a custom Tune Bit mark that combines a music note, staff lines, and a subtle digital accent.
 - Reduced repeated Tune Bit mentions in the landing page first fold so the hero reads cleaner while keeping the product promise intact.
+- Kept dismissed song-page flash notifications hidden when entering or leaving focus mode by lifting flash visibility state out of the remounted viewer components.
 
 ### Next Recommended Slice
 

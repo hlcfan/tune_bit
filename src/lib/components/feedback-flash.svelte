@@ -7,12 +7,14 @@
 		message = '',
 		class: className = '',
 		timeoutMs = 4000,
-		ariaLive = 'polite'
+		ariaLive = 'polite',
+		onDismiss = () => {}
 	}: {
 		message?: string;
 		class?: string;
 		timeoutMs?: number;
 		ariaLive?: 'off' | 'polite' | 'assertive';
+		onDismiss?: () => void;
 	} = $props();
 
 	let isVisible = $state(false);
@@ -28,6 +30,7 @@
 	function dismiss() {
 		clearDismissTimer();
 		isVisible = false;
+		onDismiss();
 	}
 
 	$effect(() => {
@@ -44,6 +47,7 @@
 			dismissTimer = setTimeout(() => {
 				isVisible = false;
 				dismissTimer = null;
+				onDismiss();
 			}, timeoutMs);
 		}
 

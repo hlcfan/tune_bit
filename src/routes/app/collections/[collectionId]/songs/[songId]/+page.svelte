@@ -75,6 +75,9 @@
 	let pendingPdfPageCountById = $state<Record<string, boolean>>({});
 	let feedbackMessage = $state('');
 	let isFeedbackError = $state(false);
+	let isFeedbackVisible = $state(false);
+	let dismissedFeedbackSignature = $state<string | null>(null);
+	let feedbackSequence = $state(0);
 	let isUploading = $state(false);
 	let isDragActive = $state(false);
 	let layout = $state<ViewerLayout>(1);
@@ -154,6 +157,11 @@
 			? 'border-destructive/30 bg-destructive/5 text-destructive'
 			: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
 	);
+	const feedbackSignature = $derived(
+		feedbackMessage
+			? `${feedbackSequence}:${isFeedbackError ? 'error' : 'success'}:${feedbackMessage}`
+			: null
+	);
 	const deleteNoteFileMessage = $derived(form?.intent === 'deleteNoteFile' ? form.message : null);
 	const totalPages = $derived(notePages.length);
 	const hasViewerPages = $derived(viewerPages.length > 0);
@@ -167,8 +175,7 @@
 
 	$effect(() => {
 		if (data.message) {
-			feedbackMessage = data.message;
-			isFeedbackError = false;
+			setFeedback(data.message, false);
 		}
 	});
 
@@ -177,8 +184,16 @@
 			return;
 		}
 
-		feedbackMessage = form.message;
-		isFeedbackError = !('success' in form && form.success);
+		setFeedback(form.message, !('success' in form && form.success));
+	});
+
+	$effect(() => {
+		if (!feedbackSignature) {
+			isFeedbackVisible = false;
+			return;
+		}
+
+		isFeedbackVisible = feedbackSignature !== dismissedFeedbackSignature;
 	});
 
 	$effect(() => {
@@ -775,6 +790,17 @@
 		}
 	}
 
+	function setFeedback(message: string, isError: boolean) {
+		feedbackMessage = message;
+		isFeedbackError = isError;
+		feedbackSequence += 1;
+	}
+
+	function dismissFeedback() {
+		dismissedFeedbackSignature = feedbackSignature;
+		isFeedbackVisible = false;
+	}
+
 	async function setFocusMode(nextFocusMode: boolean) {
 		if (browser && nextFocusMode) {
 			focusReturnElement =
@@ -938,22 +964,19 @@
 		const files = selectedUploadFiles;
 
 		if (files.length === 0) {
-			feedbackMessage = 'Choose one or more PDF or image files to upload.';
-			isFeedbackError = true;
+			setFeedback('Choose one or more PDF or image files to upload.', true);
 			return;
 		}
 
 		const uploadValidationMessage = getUploadValidationMessage();
 
 		if (uploadValidationMessage) {
-			feedbackMessage = uploadValidationMessage;
-			isFeedbackError = true;
+			setFeedback(uploadValidationMessage, true);
 			return;
 		}
 
 		isUploading = true;
-		feedbackMessage = '';
-		isFeedbackError = false;
+		setFeedback('', false);
 
 		let uploads: PreparedUpload[] = [];
 		let didFinalize = false;
@@ -1017,8 +1040,7 @@
 			};
 
 			didFinalize = true;
-			feedbackMessage = finalizeBody.message;
-			isFeedbackError = false;
+			setFeedback(finalizeBody.message, false);
 			clearSelectedUploadFiles();
 			isDragActive = false;
 			uploadDialog?.close();
@@ -1028,9 +1050,10 @@
 				await cleanupUploads(uploads).catch(() => null);
 			}
 
-			feedbackMessage =
-				error instanceof Error ? error.message : 'Upload failed. Try again in a moment.';
-			isFeedbackError = true;
+			setFeedback(
+				error instanceof Error ? error.message : 'Upload failed. Try again in a moment.',
+				true
+			);
 
 			if (uploadDialog && !uploadDialog.open) {
 				uploadDialog.showModal();
@@ -1250,10 +1273,12 @@
 				{viewerPages}
 				maxViewportHeight={viewerViewportHeight}
 				{feedbackMessage}
+				feedbackVisible={isFeedbackVisible}
 				{feedbackClass}
 				{getPageZoom}
 				onLayoutChange={setLayout}
 				onExit={toggleFocusMode}
+				onFeedbackDismiss={dismissFeedback}
 				onZoomIn={zoomIn}
 				onZoomOut={zoomOut}
 				onZoomReset={resetZoom}
@@ -1267,8 +1292,12 @@
 				class="min-w-0 space-y-5"
 				tabindex="-1"
 			>
-				{#if feedbackMessage}
-					<FeedbackFlash message={feedbackMessage} class={feedbackClass} />
+				{#if feedbackMessage && isFeedbackVisible}
+					<FeedbackFlash
+						message={feedbackMessage}
+						class={feedbackClass}
+						onDismiss={dismissFeedback}
+					/>
 				{/if}
 				{#if !hasViewerPages}
 					<Card class="border-border/70">
@@ -1338,8 +1367,12 @@
 						<Button type="button" variant="ghost" onclick={closeUploadModal}>Close</Button>
 					</div>
 
-					{#if feedbackMessage}
-						<FeedbackFlash message={feedbackMessage} class={feedbackClass} />
+					{#if feedbackMessage && isFeedbackVisible}
+						<FeedbackFlash
+							message={feedbackMessage}
+							class={feedbackClass}
+							onDismiss={dismissFeedback}
+						/>
 					{/if}
 
 					<form class="space-y-5" onsubmit={handleUploadSubmit}>

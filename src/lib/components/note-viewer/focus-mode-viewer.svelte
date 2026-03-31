@@ -21,10 +21,12 @@
 		viewerPages,
 		maxViewportHeight,
 		feedbackMessage = '',
+		feedbackVisible = false,
 		feedbackClass = '',
 		getPageZoom,
 		onLayoutChange,
 		onExit,
+		onFeedbackDismiss = () => {},
 		onZoomIn,
 		onZoomOut,
 		onZoomReset,
@@ -36,10 +38,12 @@
 		viewerPages: ViewerPage[];
 		maxViewportHeight: number;
 		feedbackMessage?: string;
+		feedbackVisible?: boolean;
 		feedbackClass?: string;
 		getPageZoom: (pageId: string) => number;
 		onLayoutChange: (layout: ViewerLayout) => void;
 		onExit: () => void;
+		onFeedbackDismiss?: () => void;
 		onZoomIn: (pageId: string) => void;
 		onZoomOut: (pageId: string) => void;
 		onZoomReset: (pageId: string) => void;
@@ -111,8 +115,12 @@
 				</div>
 			</div>
 
-			{#if feedbackMessage}
-				<FeedbackFlash message={feedbackMessage} class={`mb-4 ${feedbackClass}`} />
+			{#if feedbackMessage && feedbackVisible}
+				<FeedbackFlash
+					message={feedbackMessage}
+					class={`mb-4 ${feedbackClass}`}
+					onDismiss={onFeedbackDismiss}
+				/>
 			{/if}
 
 			{#if viewerPages.length === 0}
