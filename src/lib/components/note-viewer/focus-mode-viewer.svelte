@@ -65,7 +65,7 @@
 			class="relative min-w-0 px-3 py-3 sm:px-4 sm:py-4"
 			tabindex="-1"
 		>
-			<div class="pointer-events-none absolute inset-x-0 top-3 z-[60] flex justify-center">
+			<div class="pointer-events-none absolute inset-x-0 top-0 z-[60] flex justify-center">
 				<div
 					aria-label="Focus mode toolbar"
 					class="pointer-events-auto inline-flex items-center gap-1 rounded-full border border-border/70 bg-background/90 p-1 shadow-lg backdrop-blur"
