@@ -1243,6 +1243,26 @@
 				</div>
 
 				<div class="flex flex-wrap items-center gap-2">
+					{#if previousSong || nextSong}
+						<div aria-label="Song navigation" class="flex flex-wrap gap-2" role="group">
+							<Button
+								variant="outline"
+								size="sm"
+								disabled={!previousSong || isChangingSong}
+								onclick={() => void navigateToSiblingSong('previous')}
+							>
+								← Prev song
+							</Button>
+							<Button
+								variant="outline"
+								size="sm"
+								disabled={!nextSong || isChangingSong}
+								onclick={() => void navigateToSiblingSong('next')}
+							>
+								Next song →
+							</Button>
+						</div>
+					{/if}
 					{#if hasViewerPages}
 						<Button onclick={openUploadModal}>Upload Notes</Button>
 					{/if}
@@ -1302,6 +1322,11 @@
 				{feedbackClass}
 				{getPageZoom}
 				onLayoutChange={setLayout}
+				hasPreviousSong={Boolean(previousSong)}
+				hasNextSong={Boolean(nextSong)}
+				{isChangingSong}
+				onPreviousSong={() => void navigateToSiblingSong('previous')}
+				onNextSong={() => void navigateToSiblingSong('next')}
 				onExit={toggleFocusMode}
 				onFeedbackDismiss={dismissFeedback}
 				onZoomIn={zoomIn}

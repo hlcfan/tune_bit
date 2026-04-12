@@ -25,6 +25,11 @@
 		feedbackClass = '',
 		getPageZoom,
 		onLayoutChange,
+		hasPreviousSong,
+		hasNextSong,
+		isChangingSong = false,
+		onPreviousSong,
+		onNextSong,
 		onExit,
 		onFeedbackDismiss = () => {},
 		onZoomIn,
@@ -42,6 +47,11 @@
 		feedbackClass?: string;
 		getPageZoom: (pageId: string) => number;
 		onLayoutChange: (layout: ViewerLayout) => void;
+		hasPreviousSong: boolean;
+		hasNextSong: boolean;
+		isChangingSong?: boolean;
+		onPreviousSong: () => void;
+		onNextSong: () => void;
 		onExit: () => void;
 		onFeedbackDismiss?: () => void;
 		onZoomIn: (pageId: string) => void;
@@ -101,6 +111,26 @@
 							onclick={() => onLayoutChange(3)}
 						>
 							3
+						</Button>
+					</div>
+					<div aria-label="Song navigation" class="flex items-center gap-1" role="group">
+						<Button
+							aria-label="Previous song"
+							variant="ghost"
+							size="xs"
+							disabled={!hasPreviousSong || isChangingSong}
+							onclick={onPreviousSong}
+						>
+							Prev
+						</Button>
+						<Button
+							aria-label="Next song"
+							variant="ghost"
+							size="xs"
+							disabled={!hasNextSong || isChangingSong}
+							onclick={onNextSong}
+						>
+							Next
 						</Button>
 					</div>
 					<Button
