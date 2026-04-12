@@ -84,6 +84,7 @@
 	let focusReturnElement = $state<HTMLElement | null>(null);
 	let activeNoteFileId = $state<string | null>(null);
 	let isChangingSong = $state(false);
+	let changingSongDirection = $state<'previous' | 'next' | null>(null);
 	let pdfMetadataRequestToken = 0;
 
 	const collectionSongs = $derived((data.collectionSongs ?? []) as CollectionSong[]);
@@ -167,6 +168,16 @@
 			: layout === 2
 				? 'grid-cols-1 xl:grid-cols-2'
 				: 'grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3'
+	);
+	const songChangeLoadingLabel = $derived(
+		changingSongDirection === 'previous'
+			? 'Loading previous song…'
+			: changingSongDirection === 'next'
+				? 'Loading next song…'
+				: 'Loading song…'
+	);
+	const songChangeIndicatorPositionClass = $derived(
+		isFocusMode ? 'inset-x-0 bottom-4 sm:bottom-6' : 'inset-x-0 top-4'
 	);
 
 	$effect(() => {
@@ -843,6 +854,7 @@
 			return;
 		}
 
+		changingSongDirection = direction;
 		isChangingSong = true;
 
 		try {
@@ -854,6 +866,7 @@
 			);
 		} finally {
 			isChangingSong = false;
+			changingSongDirection = null;
 		}
 	}
 
@@ -1188,6 +1201,22 @@
 {/snippet}
 
 <div>
+	{#if isChangingSong}
+		<div
+			aria-live="polite"
+			class={`pointer-events-none fixed z-[70] flex justify-center ${songChangeIndicatorPositionClass}`}
+		>
+			<div
+				class="inline-flex items-center gap-2 rounded-full border border-border/70 bg-background/95 px-3 py-1.5 text-sm shadow-lg backdrop-blur"
+			>
+				<span
+					aria-hidden="true"
+					class="h-3 w-3 animate-spin rounded-full border-2 border-primary/30 border-t-primary"
+				></span>
+				<span>{songChangeLoadingLabel}</span>
+			</div>
+		</div>
+	{/if}
 	<div class="space-y-6">
 		{#if !isFocusMode}
 			<section class="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
