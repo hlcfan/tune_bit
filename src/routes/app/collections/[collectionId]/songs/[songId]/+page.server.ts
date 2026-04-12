@@ -24,7 +24,6 @@ type SongRow = {
 type CollectionSongRow = {
 	id: string;
 	title: string;
-	updated_at: string;
 };
 
 type NoteFileRow = {
@@ -32,7 +31,6 @@ type NoteFileRow = {
 	original_filename: string;
 	mime_type: string;
 	page_count: number;
-	created_at: string;
 };
 
 type NotePageRow = {
@@ -40,8 +38,6 @@ type NotePageRow = {
 	note_file_id: string;
 	page_number: number;
 	sort_order: number;
-	preview_key: string | null;
-	created_at: string;
 };
 
 async function requireUser(locals: App.Locals) {
@@ -103,34 +99,61 @@ export const load = async ({
 	url: URL;
 }) => {
 	const user = await requireUser(locals);
-	const [collection, song] = await Promise.all([
-		loadCollection(locals, user.id, params.collectionId),
-		loadSong(locals, user.id, params.collectionId, params.songId)
-	]);
 	const [
+		{ data: collection, error: collectionError },
+		{ data: song, error: songError },
 		{ data: noteFiles, error: noteFilesError },
 		{ data: notePages, error: notePagesError },
 		{ data: collectionSongs, error: collectionSongsError }
 	] = await Promise.all([
 		locals.supabase
+			.from('collections')
+			.select('id, name')
+			.eq('id', params.collectionId)
+			.eq('user_id', user.id)
+			.maybeSingle(),
+		locals.supabase
+			.from('songs')
+			.select('id, title, created_at, updated_at')
+			.eq('id', params.songId)
+			.eq('collection_id', params.collectionId)
+			.eq('user_id', user.id)
+			.maybeSingle(),
+		locals.supabase
 			.from('note_files')
-			.select('id, original_filename, mime_type, page_count, created_at')
+			.select('id, original_filename, mime_type, page_count')
 			.eq('user_id', user.id)
 			.eq('song_id', params.songId)
 			.order('created_at', { ascending: true }),
 		locals.supabase
 			.from('note_pages')
-			.select('id, note_file_id, page_number, sort_order, preview_key, created_at')
+			.select('id, note_file_id, page_number, sort_order')
 			.eq('user_id', user.id)
 			.eq('song_id', params.songId)
 			.order('sort_order', { ascending: true }),
 		locals.supabase
 			.from('songs')
-			.select('id, title, updated_at')
+			.select('id, title')
 			.eq('user_id', user.id)
 			.eq('collection_id', params.collectionId)
 			.order('updated_at', { ascending: false })
 	]);
+
+	if (collectionError) {
+		error(500, 'Could not load that collection right now.');
+	}
+
+	if (!collection) {
+		error(404, 'That collection could not be found.');
+	}
+
+	if (songError) {
+		error(500, 'Could not load that song right now.');
+	}
+
+	if (!song) {
+		error(404, 'That song could not be found.');
+	}
 
 	if (noteFilesError || notePagesError || collectionSongsError) {
 		error(500, 'Could not load the uploaded note data right now.');
@@ -138,8 +161,8 @@ export const load = async ({
 
 	return {
 		message: url.searchParams.get('message'),
-		collection,
-		song,
+		collection: collection as CollectionRow,
+		song: song as SongRow,
 		collectionSongs: (collectionSongs ?? []) as CollectionSongRow[],
 		noteFiles: (noteFiles ?? []) as NoteFileRow[],
 		notePages: (notePages ?? []) as NotePageRow[]

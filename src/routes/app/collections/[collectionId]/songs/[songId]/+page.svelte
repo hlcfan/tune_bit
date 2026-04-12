@@ -36,7 +36,6 @@
 		original_filename: string;
 		mime_type: string;
 		page_count: number;
-		created_at: string;
 	};
 
 	type NotePage = {
@@ -44,14 +43,11 @@
 		note_file_id: string;
 		page_number: number;
 		sort_order: number;
-		preview_key: string | null;
-		created_at: string;
 	};
 
 	type CollectionSong = {
 		id: string;
 		title: string;
-		updated_at: string;
 	};
 
 	type ViewerLayout = 1 | 2 | 3;

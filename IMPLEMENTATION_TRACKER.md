@@ -193,6 +193,7 @@
 - Replaced the default Svelte favicon with a custom Tune Bit mark that combines a music note, staff lines, and a subtle digital accent.
 - Reduced repeated Tune Bit mentions in the landing page first fold so the hero reads cleaner while keeping the product promise intact.
 - Kept dismissed song-page flash notifications hidden when entering or leaving focus mode by lifting flash visibility state out of the remounted viewer components.
+- Reduced song-page client navigation latency by memoizing per-request auth lookup work, parallelizing the song route’s Supabase reads, and trimming unused fields from the `__data.json` payload.
 
 ### Next Recommended Slice
 

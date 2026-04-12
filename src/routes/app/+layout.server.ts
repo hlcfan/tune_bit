@@ -1,7 +1,12 @@
 import { redirect } from '@sveltejs/kit';
 
-export const load = async ({ locals, url }: { locals: App.Locals; url: URL }) => {
-	const { session, user } = await locals.safeGetSession();
+type AppLayoutLoadArgs = {
+	parent: () => Promise<App.PageData>;
+	url: URL;
+};
+
+export const load = async ({ parent, url }: AppLayoutLoadArgs) => {
+	const { session, user } = await parent();
 
 	if (!user) {
 		redirect(303, `/sign-in?redirectTo=${encodeURIComponent(url.pathname + url.search)}`);

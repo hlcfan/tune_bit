@@ -3,7 +3,14 @@ import type { Handle } from '@sveltejs/kit';
 
 export const handle: Handle = async ({ event, resolve }) => {
 	event.locals.supabase = createSupabaseServerClient(event);
-	event.locals.safeGetSession = () => safeGetSession(event);
+	let safeSessionPromise: ReturnType<typeof safeGetSession> | null = null;
+	event.locals.safeGetSession = () => {
+		if (!safeSessionPromise) {
+			safeSessionPromise = safeGetSession(event);
+		}
+
+		return safeSessionPromise;
+	};
 
 	return resolve(event, {
 		filterSerializedResponseHeaders(name) {
