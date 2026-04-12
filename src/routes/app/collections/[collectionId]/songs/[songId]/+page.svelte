@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { browser } from '$app/environment';
-	import { goto, invalidateAll } from '$app/navigation';
+	import { afterNavigate, beforeNavigate, goto, invalidateAll } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import FeedbackFlash from '$lib/components/feedback-flash.svelte';
@@ -176,9 +176,38 @@
 				? 'Loading next song…'
 				: 'Loading song…'
 	);
-	const songChangeIndicatorPositionClass = $derived(
-		isFocusMode ? 'inset-x-0 bottom-4 sm:bottom-6' : 'inset-x-0 top-4'
-	);
+	const songChangeIndicatorPositionClass = 'inset-x-0 bottom-4 sm:bottom-6';
+
+	if (browser) {
+		beforeNavigate((navigation) => {
+			const destinationPath = navigation.to?.url.pathname;
+
+			if (!destinationPath) {
+				return;
+			}
+
+			const destination = getSongRouteLocation(destinationPath);
+
+			if (!destination || destination.collectionId !== data.collection.id) {
+				return;
+			}
+
+			const originPath = navigation.from?.url.pathname ?? page.url.pathname;
+			const origin = getSongRouteLocation(originPath);
+
+			if (origin?.songId === destination.songId) {
+				return;
+			}
+
+			isChangingSong = true;
+			changingSongDirection = getSongDirection(origin?.songId ?? null, destination.songId);
+		});
+
+		afterNavigate(() => {
+			isChangingSong = false;
+			changingSongDirection = null;
+		});
+	}
 
 	$effect(() => {
 		if (data.message) {
@@ -839,6 +868,44 @@
 		void setFocusMode(!isFocusMode);
 	}
 
+	function getSongRouteLocation(pathname: string) {
+		const segments = pathname.split('/').filter(Boolean);
+		const collectionsSegmentIndex = segments.indexOf('collections');
+
+		if (collectionsSegmentIndex < 0) {
+			return null;
+		}
+
+		const collectionId = segments[collectionsSegmentIndex + 1];
+		const songsMarker = segments[collectionsSegmentIndex + 2];
+		const songId = segments[collectionsSegmentIndex + 3];
+		const extraSegment = segments[collectionsSegmentIndex + 4];
+
+		if (!collectionId || songsMarker !== 'songs' || !songId || extraSegment) {
+			return null;
+		}
+
+		return {
+			collectionId: decodeURIComponent(collectionId),
+			songId: decodeURIComponent(songId)
+		};
+	}
+
+	function getSongDirection(fromSongId: string | null, toSongId: string) {
+		if (!fromSongId) {
+			return null;
+		}
+
+		const fromSongIndex = collectionSongs.findIndex((song) => song.id === fromSongId);
+		const toSongIndex = collectionSongs.findIndex((song) => song.id === toSongId);
+
+		if (fromSongIndex < 0 || toSongIndex < 0 || fromSongIndex === toSongIndex) {
+			return null;
+		}
+
+		return toSongIndex > fromSongIndex ? 'next' : 'previous';
+	}
+
 	async function navigateToSiblingSong(direction: 'previous' | 'next') {
 		if (!browser || isChangingSong) {
 			return;
@@ -864,7 +931,7 @@
 					songId: targetSong.id
 				})
 			);
-		} finally {
+		} catch {
 			isChangingSong = false;
 			changingSongDirection = null;
 		}
@@ -1246,20 +1313,24 @@
 					{#if previousSong || nextSong}
 						<div aria-label="Song navigation" class="flex flex-wrap gap-2" role="group">
 							<Button
+								aria-label="Previous song"
+								title="Previous song"
 								variant="outline"
-								size="sm"
+								size="icon-sm"
 								disabled={!previousSong || isChangingSong}
 								onclick={() => void navigateToSiblingSong('previous')}
 							>
-								← Prev song
+								←
 							</Button>
 							<Button
+								aria-label="Next song"
+								title="Next song"
 								variant="outline"
-								size="sm"
+								size="icon-sm"
 								disabled={!nextSong || isChangingSong}
 								onclick={() => void navigateToSiblingSong('next')}
 							>
-								Next song →
+								→
 							</Button>
 						</div>
 					{/if}
